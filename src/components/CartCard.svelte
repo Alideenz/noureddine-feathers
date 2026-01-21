@@ -129,7 +129,9 @@
       </div>
       <div class="flex gap-8 lg:flex-col lg:gap-8">
         <p class="flex flex-grow">Price</p>
-        {#if cartItem.category === 'Feather Dusters' && !$page.data.session}
+        {#if !$page.data.session && 
+            (cartItem.category === 'Feather Dusters' || 
+            cartItem.category === 'Lambswool Dusters')}
           <p>
             <Link
               href="/account/sign-in"

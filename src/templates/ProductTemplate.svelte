@@ -124,7 +124,10 @@
         ratingAverage={data.product.rating_average}
         ratingCount={data.product.rating_count}
       />
-      {#if data.product.category === 'Feather Dusters' && !$page.data.session}
+      !$page.data.session && 
+(data.product.category === 'Feather Dusters' || 
+ data.product.category === 'Lambswool Dusters')
+
         <p>
           <Link
             href="/account/sign-in"
