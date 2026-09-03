@@ -2,11 +2,12 @@
 
 // svelte
 import { fail } from '@sveltejs/kit';
+import type { Actions } from './$types';
 
-export const actions = {
-  default: async ({ request, url, locals: { supabase } }) => {
+export const actions: Actions = {
+  default: async ({ request, locals: { supabase } }) => {
     const formData = await request.formData();
-    const email = formData.get('email');
+    const email = String(formData.get('email') || '');
 
     if (!email || email.length < 3) {
       return fail(400, {
@@ -16,7 +17,7 @@ export const actions = {
       });
     }
 
-    const { data, error } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
       email,
     });
 

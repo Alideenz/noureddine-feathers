@@ -39,7 +39,7 @@
         perfect for picking up dust, which make them good for sensitive objects.
         Ostrich feathers are particularly lightweight, soft, and gentle on
         delicate surfaces, providing a scratch-free experience, which makes them
-        especialluy suited for home and office furniture and equipment.
+        especially suited for home and office furniture and equipment.
       </p>
     </div>
     <div class="flex flex-col gap-4">
@@ -51,7 +51,7 @@
       </p>
     </div>
     <div class="flex flex-col gap-4">
-      <p class="montserrat-bold">What if I am not satisifed with my order?</p>
+      <p class="montserrat-bold">What if I am not satisfied with my order?</p>
       <p>
         Your satisfaction is our top priority. If you have any questions or are
         unsatisfied with your order, please contact us by email at

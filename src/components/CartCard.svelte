@@ -1,20 +1,15 @@
 <!-- @format -->
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { afterUpdate } from 'svelte';
-
-  // storage
-  import { getPublicUrl } from '$api/storage';
-
   // interfaces
   import type I_CartItem from '$interfaces/I_CartItem';
 
   // helpers
   import {
     formatCurrency,
-    formatText,
     formatPackage,
-    formatName,
+    formatProductTitle,
+    getProductImagePath,
+    getProductPath,
   } from '$helpers/helpers';
 
   // stores
@@ -31,84 +26,35 @@
 
   // state
   let quantity: number = cartItem.cart_item_quantity;
-  let src: string = '';
 
-  $: cart.updateCartItem(cartItemIndex, quantity);
-
-  afterUpdate(() => {
-    quantity = cartItem.cart_item_quantity;
-
-    src = `/products/${formatName(
-      cartItem.name,
-      cartItem.color,
-      cartItem.size,
-      cartItem.size_unit
-    )}/0-${formatName(
-      cartItem.name,
-      cartItem.color,
-      cartItem.size,
-      cartItem.size_unit
-    )}-1024x1024.webp`;
-
-    // if (cartItem.category === 'Feathers') {
-    //   src = getPublicUrl(
-    //     `${formatName(
-    //       cartItem.name,
-    //       cartItem.color,
-    //       cartItem.size,
-    //       cartItem.size_unit
-    //     )}/0-${formatName(
-    //       cartItem.name,
-    //       cartItem.color,
-    //       cartItem.size,
-    //       cartItem.size_unit
-    //     )}-1024x1024.webp`
-    //   );
-    // } else {
-    //   src = getPublicUrl(
-    //     `${formatName(
-    //       cartItem.name,
-    //       cartItem.color,
-    //       cartItem.size,
-    //       cartItem.size_unit
-    //     )}/${formatName(
-    //       cartItem.name,
-    //       cartItem.color,
-    //       cartItem.size,
-    //       cartItem.size_unit
-    //     )}-0.webp`
-    //   );
-    // }
-  });
+  $: src = getProductImagePath(cartItem);
+  $: productPath = getProductPath(cartItem);
+  $: productTitle = formatProductTitle(cartItem);
 </script>
 
-<div class="flex flex-col gap-8 sm:flex-row">
-  <div class="self-start bg-neutral-100">
-    <Link
-      href={`/products/${formatText(cartItem.category)}/${
-        cartItem.product_id
-      }-${formatText(cartItem.name)}-${formatText(cartItem.color)}-${
-        cartItem.size || ''
-      }-${formatText(cartItem.size_unit) || ''}`}
-    >
+<div class="flex flex-col gap-5 sm:flex-row">
+  <div class="self-start overflow-hidden rounded-lg bg-stone-100">
+    <Link href={productPath} ariaLabel={productTitle}>
       <img
         {src}
         alt={cartItem.name}
-        width=""
-        height=""
-        class="rounded object-contain p-2 transition-all hover:scale-110 sm:max-w-[200px]"
+        class="aspect-square w-full object-contain p-4 transition-all hover:scale-105 sm:w-[180px]"
+        loading="lazy"
       />
     </Link>
   </div>
-  <div class="flex w-full flex-col gap-8">
-    <div class="flex gap-8">
-      <p class="flex-grow">
-        {cartItem.name} - {cartItem.color}
-        {cartItem.size ? `- ${cartItem.size} ${cartItem.size_unit}` : ''}
-      </p>
+  <div class="flex w-full flex-col gap-6">
+    <div class="flex gap-5">
+      <Link
+        href={productPath}
+        customClass="montserrat-bold flex-grow leading-snug text-stone-950 hover:text-teal-800 transition-all"
+      >
+        {productTitle}
+      </Link>
       <Button
-        customClass="self-start rounded-full bg-neutral-100 p-2 hover:bg-black hover:text-white transition-all"
+        customClass="self-start rounded-full bg-stone-100 p-2 hover:bg-stone-950 hover:text-white transition-all"
         handleClick={() => cart.removeCartItem(cartItemIndex)}
+        ariaLabel="Remove item"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -122,32 +68,23 @@
         </svg>
       </Button>
     </div>
-    <div class="flex flex-col gap-8 lg:grid lg:grid-cols-3">
-      <div class="flex gap-8 lg:flex-col lg:gap-8">
-        <p class="flex flex-grow">Package</p>
+    <div class="grid gap-5 rounded-lg bg-stone-50 p-4 lg:grid-cols-3">
+      <div class="flex gap-8 lg:flex-col lg:gap-2">
+        <p class="flex flex-grow text-sm uppercase text-stone-500">Package</p>
         <p>{formatPackage(cartItem.quantity)}</p>
       </div>
-      <div class="flex gap-8 lg:flex-col lg:gap-8">
-        <p class="flex flex-grow">Price</p>
-        {#if !$page.data.session && 
-            (cartItem.category === 'Feather Dusters' || 
-            cartItem.category === 'Lambswool Dusters')}
-          <p>
-            <Link
-              href="/account/sign-in"
-              customClass="text-sky-500 hover:underline transition-all"
-              >Sign in</Link
-            > to view prices
-          </p>
-        {:else}
-          <p class="montserrat-bold">
-            {formatCurrency(cartItem.price * cartItem.cart_item_quantity)}
-          </p>
-        {/if}
+      <div class="flex gap-8 lg:flex-col lg:gap-2">
+        <p class="flex flex-grow text-sm uppercase text-stone-500">Price</p>
+        <p class="montserrat-bold text-teal-800">
+          {formatCurrency(cartItem.price * cartItem.cart_item_quantity)}
+        </p>
       </div>
-      <div class="flex gap-8 lg:flex-col lg:gap-8">
-        <p class="flex flex-grow items-center">Quantity</p>
-        <Counter bind:value={quantity} />
+      <div class="flex gap-8 lg:flex-col lg:gap-2">
+        <p class="flex flex-grow items-center text-sm uppercase text-stone-500">Quantity</p>
+        <Counter
+          bind:value={quantity}
+          on:change={() => cart.updateCartItem(cartItemIndex, quantity)}
+        />
       </div>
     </div>
   </div>

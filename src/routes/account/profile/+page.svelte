@@ -2,8 +2,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { page } from '$app/stores';
-  export let form;
-  export let data;
+  export let data: any;
 
   // components
   import Heading from '$components/Heading.svelte';
@@ -14,7 +13,7 @@
   let isLoading = false;
   let prevDisplayName = data.userProfile?.display_name;
   let newDisplayName = data.userProfile?.display_name;
-  let formResponse;
+  let formResponse: any;
 
   $: {
     if (formResponse?.success !== undefined)
@@ -23,7 +22,7 @@
 </script>
 
 <svelte:head>
-  <title>Profile</title>
+  <title>Profile | Noureddine Feathers</title>
   <meta
     name="description"
     content="Profile | Noureddine Feathers - Shop premium ostrich feather dusters, premium extendable lambswool dusters, premium lambswool dusters, ostrich feathers, and ostrich eggshells - handmade from 100% natural farm-raised ostrich feathers and eggshells"
@@ -40,14 +39,16 @@
         isLoading = true;
 
         return async ({ result }) => {
-          if (result) {
+          if (result.type === 'success' || result.type === 'failure') {
             formResponse = result.data;
             prevDisplayName = formResponse.displayName;
+            isLoading = false;
+          } else {
             isLoading = false;
           }
         };
       }}
-      class="flex flex-col gap-8 rounded bg-neutral-100 p-4"
+      class="nf-panel flex flex-col gap-8 p-5"
     >
       <div class="flex flex-col gap-4">
         <label
@@ -60,10 +61,10 @@
           name="display-name"
           autoComplete="off"
           value={newDisplayName}
-          on:input={(e) => (newDisplayName = e.target.value)}
+          on:input={(e) => (newDisplayName = e.currentTarget.value)}
           class={`${
             formResponse?.success === false ? 'border-rose-500' : 'border-white'
-          } box-border w-full rounded border-2 p-2`}
+          } box-border w-full rounded border-2 p-3`}
           placeholder="Name"
         />
       </div>
@@ -73,7 +74,7 @@
         <p>{formResponse?.message}</p>
       {/if}
       <Button
-        customClass="bg-sky-400 text-white px-8 py-4 hover:bg-sky-500 transition-all rounded-full disabled:opacity-25"
+        customClass="bg-teal-800 text-white px-8 py-4 hover:bg-teal-700 transition-all rounded-full disabled:opacity-25"
         type="submit"
         disabled={isLoading || newDisplayName === prevDisplayName}
         >Update Name</Button

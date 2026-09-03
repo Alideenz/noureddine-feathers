@@ -2,7 +2,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { page } from '$app/stores';
-  export let form;
 
   // components
   import Heading from '$components/Heading.svelte';
@@ -10,7 +9,7 @@
   import Link from '$components/Link.svelte';
 
   let isLoading = false;
-  let formResponse;
+  let formResponse: any;
 </script>
 
 <svelte:head>
@@ -36,13 +35,15 @@
         isLoading = true;
 
         return async ({ result }) => {
-          if (result) {
+          if (result.type === 'success' || result.type === 'failure') {
             formResponse = result.data;
+            isLoading = false;
+          } else {
             isLoading = false;
           }
         };
       }}
-      class="flex flex-col gap-8 rounded bg-neutral-100 p-4"
+      class="nf-panel flex flex-col gap-8 p-5"
     >
       <div class="flex flex-col gap-4">
         <label
@@ -57,7 +58,7 @@
           value={formResponse?.email ?? ''}
           class={`${
             formResponse?.success === false ? 'border-rose-500' : 'border-white'
-          } box-border w-full rounded border-2 p-2`}
+          } box-border w-full rounded border-2 p-3`}
           placeholder="Email"
         />
       </div>
@@ -65,7 +66,7 @@
         <p class="text-rose-500">{formResponse?.message}</p>
       {/if}
       <Button
-        customClass="disabled:opacity-25 bg-sky-400 text-white px-8 py-4 hover:bg-sky-500 transition-all rounded-full"
+        customClass="disabled:opacity-25 bg-teal-800 text-white px-8 py-4 hover:bg-teal-700 transition-all rounded-full"
         type="submit"
         disabled={isLoading}>Sign In</Button
       >

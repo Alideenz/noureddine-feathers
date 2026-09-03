@@ -5,6 +5,15 @@ import type I_Product from '$interfaces/I_Product';
 
 // helpers
 import { groupBy } from '$helpers/helpers';
+import {
+  getFallbackProductById,
+  getFallbackProductPricesByIds,
+  getFallbackProducts,
+} from '$api/fallback-products';
+import {
+  normalizeProduct,
+  normalizeProductPrices,
+} from '$api/pricing-overrides';
 
 // config
 import supabase from '$config/supabase';
@@ -36,13 +45,15 @@ const getProductById = async (id: string): Promise<I_Product | undefined> => {
 
   if (productError || productPriceError) {
     console.log('[getProductById]:[error]', productError, productPriceError);
-    return product;
+    return getFallbackProductById(id);
   }
 
   if (!productData || !productPriceData) {
     console.log('[getProductById]:[null]', productData, productPriceData);
-    return product;
+    return getFallbackProductById(id);
   }
+
+  if (productData.length === 0) return getFallbackProductById(id);
 
   const groupedProductPriceData = groupBy(productPriceData, 'product_id');
 
@@ -55,11 +66,11 @@ const getProductById = async (id: string): Promise<I_Product | undefined> => {
     return product;
   })[0];
 
-  return product;
+  return normalizeProduct(product);
 };
 
 const getProducts = async (
-  filters: {} = {},
+  filters: { [key: string]: string | number | boolean } = {},
   sort: { key: string; value: { ascending: boolean } } = {
     key: 'id',
     value: { ascending: true },
@@ -91,12 +102,12 @@ const getProducts = async (
 
   if (productError || productPriceError) {
     console.log('[getProducts]:[error]', productError, productPriceError);
-    return products;
+    return getFallbackProducts(filters, limit);
   }
 
   if (!productData || !productPriceData) {
     console.log('[getProducts]:[null]', productData, productPriceData);
-    return products;
+    return getFallbackProducts(filters, limit);
   }
 
   const groupedProductPriceData = groupBy(productPriceData, 'product_id');
@@ -110,7 +121,9 @@ const getProducts = async (
     return product;
   });
 
-  return products;
+  if (products.length === 0) return getFallbackProducts(filters, limit);
+
+  return products.map(normalizeProduct);
 };
 
 const getProductPricesByIds = async (productPriceIds: any) => {
@@ -123,10 +136,13 @@ const getProductPricesByIds = async (productPriceIds: any) => {
 
   if (error) {
     console.log('[getProductPricesByIds]:[error]', error);
-    return [];
+    return getFallbackProductPricesByIds(productPriceIds);
   }
 
-  return data;
+  if (!data || data.length === 0)
+    return getFallbackProductPricesByIds(productPriceIds);
+
+  return normalizeProductPrices(data);
 };
 
 export { getProductById, getProducts, getProductPricesByIds };

@@ -4,6 +4,6 @@
   export let customClass: string = '';
 </script>
 
-<h1 class={`montserrat-bold text-lg uppercase ${customClass}`}>
+<h2 class={`montserrat-bold text-xl leading-snug text-stone-950 ${customClass}`}>
   <slot />
-</h1>
+</h2>

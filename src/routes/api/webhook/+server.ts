@@ -25,7 +25,13 @@ export async function POST({ request }: any) {
         const session: any = event.data.object;
         const sessionExpanded: any = await stripe.checkout.sessions.retrieve(
           session.id,
-          { expand: ["line_items", "payment_intent.latest_charge"] }
+          {
+            expand: [
+              "line_items",
+              "line_items.data.price.product",
+              "payment_intent.latest_charge",
+            ],
+          }
         );
 
         const newOrder: any = {
@@ -51,20 +57,24 @@ export async function POST({ request }: any) {
         const newOrderProducts: any = [];
 
         sessionExpanded.line_items.data.forEach((line_item: any) => {
+          const stripeProductId =
+            typeof line_item.price.product === "string"
+              ? line_item.price.product
+              : line_item.price.product?.id;
+          const sourceStripePriceId =
+            line_item.price.product?.metadata?.source_stripe_price_id;
           const newOrderProduct = {
             order_id: insertedOrder.id,
             user_profile_id: insertedOrder.user_profile_id,
             quantity: line_item.quantity,
-            stripe_product_id: line_item.price.product,
-            stripe_price_id: line_item.price.id,
+            stripe_product_id: stripeProductId,
+            stripe_price_id: sourceStripePriceId || line_item.price.id,
           };
 
           newOrderProducts.push(newOrderProduct);
         });
 
-        const insertedOrderProducts = await insertOrderProducts(
-          newOrderProducts
-        );
+        await insertOrderProducts(newOrderProducts);
 
         break;
       default:

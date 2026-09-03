@@ -30,13 +30,13 @@
   }
 </script>
 
-<nav>
+<nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl">
   {#if showNavMobile}
-    <div class="fixed top-0 z-50 h-full w-full overflow-auto bg-white">
-      <p class="bg-neutral-100 p-2 text-center text-sm uppercase">
-        <span class="montserrat-bold">Free shipping</span> on orders over $600
+    <div class="fixed top-0 z-50 h-full w-full overflow-auto bg-stone-50">
+      <p class="bg-stone-950 p-2 text-center text-sm uppercase tracking-[0.14em] text-white">
+        Trade pricing available · free delivery over $950
       </p>
-      <div class="flex gap-4 px-8">
+      <div class="flex gap-4 border-b border-stone-200 bg-white px-8">
         <Link
           href="/"
           customClass="max-w-min"
@@ -53,7 +53,8 @@
         <div class="flex flex-1 items-center justify-end lg:hidden">
           <Button
             handleClick={() => (showNavMobile = false)}
-            customClass="rounded-full p-2 hover:bg-neutral-100 transition-all "
+            customClass="rounded-full p-2 hover:bg-stone-100 transition-all "
+            ariaLabel="Close navigation"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -68,58 +69,58 @@
           </Button>
         </div>
       </div>
-      <div class="flex flex-col px-8">
+      <div class="flex flex-col px-8 py-4">
         <Link
           handleClick={() => (showNavMobile = false)}
           href="/products/feather-dusters"
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
             $page.url.pathname.includes('feather-dusters')
-              ? 'border-black border-b-2'
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
           }`}>Feather Dusters</Link
         >
         <Link
           handleClick={() => (showNavMobile = false)}
           href="/products/lambswool-dusters"
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
             $page.url.pathname.includes('lambswool-dusters')
-              ? 'border-black border-b-2'
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
           }`}>Lambswool Dusters</Link
         >
         <Link
           handleClick={() => (showNavMobile = false)}
           href="/products/feathers"
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
             $page.url.pathname.includes('feathers')
-              ? 'border-black border-b-2'
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
           }`}>Feathers</Link
         >
         <Link
           handleClick={() => (showNavMobile = false)}
           href="/products/eggshells"
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
             $page.url.pathname.includes('eggshells')
-              ? 'border-black border-b-2'
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
           }`}>Eggshells</Link
         >
         <Link
           handleClick={() => (showNavMobile = false)}
-          href={`${$page.data.session ? '/account' : '/account/sign-in'}`}
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
-            $page.url.pathname.includes('account')
-              ? 'border-black border-b-2'
+          href="/products/janitorial-bulk"
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
+            $page.url.pathname.includes('janitorial-bulk')
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
-          }`}>Account</Link
+          }`}>Bulk Orders</Link
         >
         <Link
           handleClick={() => (showNavMobile = false)}
           href="/cart"
-          customClass={`py-4 flex items-center hover:border-black border-b-2 transition-all ${
+          customClass={`py-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
             $page.url.pathname.includes('cart')
-              ? 'border-black border-b-2'
+              ? 'border-teal-800 border-b-2 text-teal-800'
               : 'border-transparent'
           }`}
         >
@@ -133,11 +134,11 @@
       </div>
     </div>
   {:else}
-    <p class="bg-neutral-100 p-2 text-center text-sm uppercase">
-      <span class="montserrat-bold">Free shipping</span> on orders over $600
+    <p class="bg-stone-950 p-2 text-center text-xs uppercase tracking-[0.18em] text-[#f2d58b]">
+      Trade pricing available · free delivery over $950
     </p>
     <div
-      class=" grid w-full grid-cols-2 bg-white px-8 drop-shadow-sm lg:grid-cols-4"
+      class="grid w-full grid-cols-2 border-b border-stone-200/80 bg-white/90 px-5 shadow-[0_12px_35px_rgba(28,25,23,0.05)] sm:px-8 lg:grid-cols-4"
     >
       <Link href="/" customClass="max-w-min">
         <img
@@ -151,7 +152,8 @@
       <div class="flex items-center self-center justify-self-end lg:hidden">
         <Button
           handleClick={() => (showNavMobile = true)}
-          customClass="rounded-full p-2 hover:bg-neutral-100 transition-all"
+          customClass="rounded-full p-2 hover:bg-stone-100 transition-all"
+          ariaLabel="Open navigation"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -171,53 +173,53 @@
         <div class="flex flex-col text-center lg:flex-row">
           <Link
             href="/products/feather-dusters"
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
               $page.url.pathname.includes('feather-dusters')
-                ? 'border-black border-b-2'
+                ? 'border-teal-800 border-b-2 text-teal-800'
                 : 'border-transparent'
             }`}>Feather Dusters</Link
           >
           <Link
             href="/products/lambswool-dusters"
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
               $page.url.pathname.includes('lambswool-dusters')
-                ? 'border-black border-b-2'
+                ? 'border-teal-800 border-b-2 text-teal-800'
                 : 'border-transparent'
             }`}>Lambswool Dusters</Link
           >
           <Link
             href="/products/feathers"
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
               $page.url.pathname.includes('feathers')
-                ? 'border-black border-b-2'
+                ? 'border-teal-800 border-b-2 text-teal-800'
                 : 'border-transparent'
             }`}>Feathers</Link
           >
           <Link
             href="/products/eggshells"
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
               $page.url.pathname.includes('eggshells')
-                ? 'border-black border-b-2'
+                ? 'border-teal-800 border-b-2 text-teal-800'
                 : 'border-transparent'
             }`}>Eggshells</Link
+          >
+          <Link
+            href="/products/janitorial-bulk"
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
+              $page.url.pathname.includes('janitorial-bulk')
+                ? 'border-teal-800 border-b-2 text-teal-800'
+                : 'border-transparent'
+            }`}>Bulk Orders</Link
           >
         </div>
       </div>
       <div class="hidden lg:flex lg:justify-self-end">
         <div class="flex flex-col text-center lg:flex-row">
           <Link
-            href={`${$page.data.session ? '/account' : '/account/sign-in'}`}
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
-              $page.url.pathname.includes('account')
-                ? 'border-black border-b-2'
-                : 'border-transparent'
-            }`}>Account</Link
-          >
-          <Link
             href="/cart"
-            customClass={`px-4 flex items-center hover:border-black border-b-2 transition-all ${
+            customClass={`px-4 flex items-center hover:border-teal-800 hover:text-teal-800 border-b-2 transition-all ${
               $page.url.pathname.includes('cart')
-                ? 'border-black border-b-2'
+                ? 'border-teal-800 border-b-2 text-teal-800'
                 : 'border-transparent'
             }`}
           >

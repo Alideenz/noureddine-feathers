@@ -1,21 +1,27 @@
 <!-- @format -->
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+
   // components
   import Button from '$components/Button.svelte';
 
   // props
   export let value: number = 1;
 
+  const dispatch = createEventDispatcher();
+
   const incrementQuantity = () => {
     value = value + 1;
 
     if (value > 100) value = 100;
+    dispatch('change');
   };
 
   const decrementQuantity = () => {
     value = value - 1;
 
     if (value < 1) value = 1;
+    dispatch('change');
   };
 </script>
 
@@ -24,6 +30,7 @@
     <Button
       customClass="rounded-full hover:border-black transition-all disabled:opacity-25"
       handleClick={() => decrementQuantity()}
+      ariaLabel="Decrease quantity"
       disabled={value === 1}
     >
       <svg
@@ -47,6 +54,7 @@
     <Button
       customClass="rounded-full hover:border-black transition-all disabled:opacity-25"
       handleClick={() => incrementQuantity()}
+      ariaLabel="Increase quantity"
       disabled={value === 100}
     >
       <svg

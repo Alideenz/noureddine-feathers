@@ -6,7 +6,7 @@
   import Heading from '$components/Heading.svelte';
   import Link from '$components/Link.svelte';
 
-  let reviews: [] = [];
+  let reviews: string[] = [];
 </script>
 
 <svelte:head>
@@ -25,7 +25,7 @@
         <p>You have no reviews.</p>
       {:else}
         {#each reviews as review}
-          <div class="flex gap-8 rounded bg-neutral-100 p-4" />
+          <div class="flex gap-8 rounded bg-neutral-100 p-4">{review}</div>
         {/each}
       {/if}
     </div>

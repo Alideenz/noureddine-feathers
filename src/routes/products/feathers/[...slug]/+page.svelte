@@ -1,8 +1,9 @@
 <!-- @format -->
 <script lang="ts">
   import ProductTemplate from '$templates/ProductTemplate.svelte';
+  import type { PageData } from './$types';
 
-  export let data;
+  export let data: PageData;
 </script>
 
 <svelte:head>

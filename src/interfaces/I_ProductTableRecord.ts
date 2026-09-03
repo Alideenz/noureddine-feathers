@@ -1,12 +1,13 @@
 interface I_ProductTableRecord {
   id: number;
-  created_at: string;
-  stripe_product_id: string;
+  created_at?: string;
+  stripe_product_id?: string;
   name: string;
   description: string;
-  size: number;
+  size: number | null;
   size_unit: string;
   color: string;
+  category: string;
   is_hidden: boolean;
   rating_average: number;
   rating_count: number;

@@ -6,7 +6,7 @@ import { getProducts } from "$api/product";
 // interfaces
 import type I_Product from "$interfaces/I_Product";
 
-export async function load({ params }: any) {
+export async function load() {
   const products: I_Product[] | undefined = await getProducts({
     category: "Lambswool Dusters",
   });

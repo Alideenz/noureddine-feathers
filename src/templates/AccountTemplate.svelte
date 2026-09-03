@@ -34,7 +34,7 @@
     <Divider />
     <Button
       customClass="bg-sky-400 hover:bg-sky-500 transition-all px-8 py-4 rounded-full text-white self-start"
-      handleClick={async () => await $page.data.supabase.auth.signOut()}
+      handleClick={async () => await $page.data.supabase?.auth.signOut()}
     >
       Sign Out
     </Button>

@@ -1,6 +1,6 @@
 <!-- @format -->
 <script lang="ts">
-  export let data;
+  export let data: any;
 
   import { page } from '$app/stores';
 

@@ -1,6 +1,7 @@
 import { getOrderProducts } from "$api/order-product.js";
+import type { PageServerLoad } from './$types';
 
-export const load = async ({ locals: { getSession }, params }) => {
+export const load: PageServerLoad = async ({ locals: { getSession }, params }) => {
   const session = await getSession();
 
   let orderProducts: any = [];

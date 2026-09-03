@@ -139,7 +139,7 @@
         the website. These products or Services may have limited quantities and
         are subject to return or exchange only according to our Return Policy.
         To view our Return Policy, please visit
-        https://www.noureddinefeathers.com/returns
+        https://www.noureddinefeathers.com/info/returns
       </p>
       <p>
         We have made every effort to display as accurately as possible the
@@ -272,7 +272,7 @@
       <p class="break-all">
         Your submission of personal information through the store is governed by
         our Privacy Policy. To view our Privacy Policy, please see
-        https://www.noureddinefeathers.com/privacy-policy
+        https://www.noureddinefeathers.com/info/privacy-policy
       </p>
     </div>
     <div class="flex flex-col gap-4">

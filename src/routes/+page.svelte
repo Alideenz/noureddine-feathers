@@ -1,9 +1,10 @@
 <!-- @format -->
 <script lang="ts">
   import HomeTemplate from '$templates/HomeTemplate.svelte';
+  import type { PageData } from './$types';
 
   // data
-  export let data;
+  export let data: PageData;
 </script>
 
 <svelte:head>

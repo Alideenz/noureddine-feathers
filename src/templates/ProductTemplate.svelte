@@ -6,13 +6,16 @@
   import { cart } from '$stores/CartStore';
 
   // helpers
-  import { formatCurrency, formatPackage, formatName } from '$helpers/helpers';
+  import {
+    formatCurrency,
+    formatPackage,
+    formatProductTitle,
+    getProductImagePath,
+    hasCheckoutPrice,
+  } from '$helpers/helpers';
 
   // config
   import getStripe from '$config/stripe';
-
-  // storage
-  import { getPublicUrl } from '$api/storage';
 
   // interfaces
   import type I_Product from '$interfaces/I_Product';
@@ -23,30 +26,39 @@
   import Counter from '$components/Counter.svelte';
   import Button from '$components/Button.svelte';
   import Divider from '$components/Divider.svelte';
-  import Link from '$components/Link.svelte';
 
-  export let data;
+  export let data: {
+    product: I_Product;
+    productImagePublicUrls?: string[];
+  };
 
   // state
-  let productPrice: I_ProductPriceTableRecord = data.product?.prices[0];
+  let productPrice: I_ProductPriceTableRecord | undefined =
+    data.product?.prices[0];
   let quantity: number = 1;
   let isLoadingCheckout: boolean = false;
   let checkoutErrorMessage: string = '';
   let showAddToCartMessage: boolean = false;
   let showFullImage = false;
   let fullImageSrc = '';
-  let scrollPosition = 0;
+
+  $: productTitle = formatProductTitle(data.product);
+  $: canCheckout = hasCheckoutPrice(productPrice);
+  $: localImages =
+    data.product.category === 'Feather Dusters'
+      ? [getProductImagePath(data.product, 0), getProductImagePath(data.product, 1)]
+      : [getProductImagePath(data.product, 0)];
+  $: productImages =
+    data.productImagePublicUrls && data.productImagePublicUrls.length > 0
+      ? data.productImagePublicUrls
+      : localImages;
 
   const checkout = async () => {
+    if (!productPrice) return;
+
     try {
       isLoadingCheckout = true;
-
-      const products: any = [
-        {
-          productPriceId: productPrice.id,
-          quantity,
-        },
-      ];
+      checkoutErrorMessage = '';
 
       const response = await fetch('/api/checkout', {
         method: 'POST',
@@ -55,46 +67,61 @@
         },
         body: JSON.stringify({
           userProfileId: $page.data.session && $page.data.session.user.id,
-          products,
+          products: [
+            {
+              productPriceId: productPrice.id,
+              quantity,
+            },
+          ],
         }),
       });
 
-      const data = await response.json();
+      const checkoutSession = await response.json();
+
+      if (!response.ok || !checkoutSession.id) {
+        checkoutErrorMessage =
+          checkoutSession.error || 'Checkout could not be started.';
+        return;
+      }
 
       const stripe = await getStripe();
 
       const { error } = await stripe!.redirectToCheckout({
-        sessionId: data.id,
+        sessionId: checkoutSession.id,
       });
 
       if (error && error.message) checkoutErrorMessage = error.message;
-
-      isLoadingCheckout = false;
     } catch (error) {
-      console.log(error);
+      checkoutErrorMessage = 'Checkout could not be started. Try again later.';
+    } finally {
+      isLoadingCheckout = false;
     }
+  };
+
+  const openFullImage = (imageSrc: string) => {
+    fullImageSrc = imageSrc;
+    showFullImage = true;
   };
 
   $: {
     if (showAddToCartMessage)
-      setTimeout(() => (showAddToCartMessage = false), 1000);
+      setTimeout(() => (showAddToCartMessage = false), 1400);
   }
 </script>
 
 {#if showFullImage}
-  <div class="fixed left-0 top-0 z-50 flex h-full w-full">
-    <div class="flex h-full w-full justify-center rounded bg-neutral-100 p-2">
+  <div class="fixed inset-0 z-50 flex h-full w-full bg-stone-950/90 p-4">
+    <div class="flex h-full w-full justify-center rounded-lg bg-white p-4">
       <img
         src={fullImageSrc}
-        alt={fullImageSrc}
-        width=""
-        height=""
+        alt={productTitle}
         class="object-contain"
       />
     </div>
     <Button
-      customClass="absolute top-8 right-8 self-start rounded-full bg-neutral-100 p-2 hover:bg-black hover:text-white transition-all"
+      customClass="absolute right-8 top-8 self-start rounded-full bg-white p-3 hover:bg-stone-950 hover:text-white transition-all"
       handleClick={() => (showFullImage = false)}
+      ariaLabel="Close product image"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -109,254 +136,138 @@
     </Button>
   </div>
 {:else}
-  <div class="flex flex-col gap-8 p-8">
-    <div class="flex flex-col gap-4 lg:hidden">
-      <h1 class="montserrat-bold text-xl">
-        <p>
-          {data.product.name} - {data.product.color}
-          {data.product.size
-            ? `- ${data.product.size} ${data.product.size_unit}`
-            : ''}
-        </p>
-      </h1>
-      <Stars
-        id={data.product.id}
-        ratingAverage={data.product.rating_average}
-        ratingCount={data.product.rating_count}
-      />
-    {#if !$page.data.session &&
-    (data.product.category === 'Feather Dusters' ||
-    data.product.category === 'Lambswool Dusters')}
-
-        <p>
-          <Link
-            href="/account/sign-in"
-            customClass="text-sky-500 hover:underline transition-all"
-            >Sign in</Link
-          > to view prices
-        </p>
-      {:else if productPrice.quantity === 1}
-        <p>
-          <span class="montserrat-bold text-xl text-rose-500"
-            >{formatCurrency(productPrice.price)}</span
+  <div class="bg-stone-50">
+    <div class="nf-page grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+      <div class="order-2 flex flex-col gap-5 lg:order-1">
+        {#each productImages as imageSrc}
+          <button
+            class="group overflow-hidden rounded-lg border border-stone-200/80 bg-white p-4 shadow-[0_18px_55px_rgba(28,25,23,0.05)]"
+            on:mouseup={() => openFullImage(imageSrc)}
+            aria-label={`Open full image of ${productTitle}`}
           >
-          {formatPackage(productPrice.quantity, true)}
-        </p>
-      {:else}
-        <p>
-          <span class="montserrat-bold text-xl text-rose-500"
-            >{formatCurrency(productPrice.price)}</span
-          >{formatPackage(productPrice.quantity, true)} ({formatCurrency(
-            productPrice.price / productPrice.quantity
-          )}/unit)
-        </p>
-      {/if}
-    </div>
-    <div class="flex flex-col gap-8 lg:flex-row">
-      <div class="flex w-full flex-col gap-8 lg:w-3/5">
-        {#if data.product.category === 'Feather Dusters'}
-          <div class="flex justify-center rounded bg-neutral-100 p-2">
             <img
-              src={`/products/${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}/0-${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}-1024x1024.webp`}
-              alt={data.product.name}
-              width=""
-              height=""
-              class="object-cover hover:cursor-zoom-in"
-              on:mouseup={(e) => {
-                fullImageSrc = e.target.src;
-                showFullImage = true;
-              }}
+              src={imageSrc}
+              alt={productTitle}
+              class="aspect-square w-full object-contain transition-all duration-500 group-hover:scale-105"
             />
-          </div>
-          <div class="flex justify-center rounded bg-neutral-100 p-2">
-            <img
-              src={`/products/${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}/1-${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}-1024x1024.webp`}
-              alt={data.product.name}
-              width=""
-              height=""
-              class="object-cover hover:cursor-zoom-in"
-              on:mouseup={(e) => {
-                fullImageSrc = e.target.src;
-                showFullImage = true;
-              }}
-            />
-          </div>
-        {:else}
-          <div class="flex justify-center rounded bg-neutral-100 p-2">
-            <img
-              src={`/products/${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}/0-${formatName(
-                data.product.name,
-                data.product.color,
-                data.product.size,
-                data.product.size_unit
-              )}-1024x1024.webp`}
-              alt={data.product.name}
-              width=""
-              height=""
-              class="object-cover hover:cursor-zoom-in"
-              on:mouseup={(e) => {
-                fullImageSrc = e.target.src;
-                showFullImage = true;
-              }}
-            />
-          </div>
-        {/if}
+          </button>
+        {/each}
       </div>
-      <div
-        class="flex w-full flex-1 flex-col gap-8 lg:sticky lg:top-4 lg:w-2/5 lg:self-start"
-      >
-        <div class="hidden lg:flex lg:flex-col lg:gap-4">
-          <h1 class="montserrat-bold text-xl">
-            <p>
-              {data.product.name} - {data.product.color}
-              {data.product.size
-                ? `- ${data.product.size} ${data.product.size_unit}`
-                : ''}
-            </p>
-          </h1>
-          <Stars
-            id={data.product.id}
-            ratingAverage={data.product.rating_average}
-            ratingCount={data.product.rating_count}
-          />
-          {#if data.product.category === 'Feather Dusters' && !$page.data.session}
-            <p>
-              <Link
-                href="/account/sign-in"
-                customClass="text-sky-500 hover:underline transition-all"
-                >Sign in</Link
-              > to view prices
-            </p>
-          {:else if productPrice.quantity === 1}
-            <p>
-              <span class="montserrat-bold text-xl text-rose-500"
-                >{formatCurrency(productPrice.price)}</span
-              >
-              {formatPackage(productPrice.quantity, true)}
-            </p>
-          {:else}
-            <p>
-              <span class="montserrat-bold text-xl text-rose-500"
-                >{formatCurrency(productPrice.price)}</span
-              >{formatPackage(productPrice.quantity, true)} ({formatCurrency(
-                productPrice.price / productPrice.quantity
-              )}/unit)
-            </p>
-          {/if}
-        </div>
-        <div class="flex flex-col gap-4">
-          <p class="montserrat-bold">Description</p>
-          <p>{data.product.description}</p>
-        </div>
-        <div class="flex flex-col gap-4">
-          <p class="montserrat-bold">Specifications</p>
-          <ul class="list-inside list-disc">
-            <li>{data.product.color}</li>
-            {#if data.product.size}
-              <li>
-                {data.product.size}
-                {data.product.size_unit}
-              </li>
+
+      <aside class="order-1 flex flex-col gap-7 lg:sticky lg:top-6 lg:order-2 lg:self-start">
+        <div class="nf-panel-modern flex flex-col gap-6 p-6">
+          <div class="flex flex-col gap-3">
+            <p class="nf-eyebrow">{data.product.category}</p>
+            <h1 class="nf-display text-4xl leading-[0.98] text-stone-950 sm:text-5xl">
+              {productTitle}
+            </h1>
+            {#if data.product.rating_count > 0}
+              <Stars
+                id={data.product.id}
+                ratingAverage={data.product.rating_average}
+                ratingCount={data.product.rating_count}
+              />
             {/if}
-          </ul>
-        </div>
-        <div class="flex flex-col gap-4">
-          <p class="montserrat-bold">Package</p>
-          <div class="flex gap-4">
-            {#each data.product.prices as price}
-              <Button
-                customClass="bg-neutral-100 px-8 py-4 rounded-full hover:border-black transition-all"
-                handleClick={() => (productPrice = price)}
-                selected={productPrice === price}
-              >
-                {formatPackage(price.quantity)}
-              </Button>
-            {/each}
           </div>
-        </div>
-        <div class="flex flex-col items-start gap-4">
-          <p class="montserrat-bold">Quantity</p>
-          <Counter bind:value={quantity} />
-        </div>
-        <Divider />
-        {#if data.product.category === 'Feather Dusters' && !$page.data.session}
-          <p>
-            <Link
-              href="/account/sign-in"
-              customClass="text-sky-500 hover:underline transition-all"
-              >Sign in</Link
-            > to purchase
-          </p>
-        {:else}
-          <div class="flex flex-col gap-8">
-            {#if data.product.category === 'Feather Dusters' && !$page.data.session}
+
+          {#if productPrice}
+            <div class="flex flex-col gap-2">
               <p>
-                <Link
-                  href="/account/sign-in"
-                  customClass="text-sky-500 hover:underline transition-all"
-                  >Sign in</Link
-                > to view prices
+                <span class="montserrat-bold text-3xl text-teal-800">
+                  {formatCurrency(productPrice.price)}
+                </span>
+                <span class="text-stone-500">
+                  {formatPackage(productPrice.quantity, true)}
+                </span>
               </p>
-            {:else if productPrice.quantity === 1}
-              <p>
-                <span class="montserrat-bold text-xl text-rose-500"
-                  >{formatCurrency(productPrice.price)}</span
-                >
-                {formatPackage(productPrice.quantity, true)}
-              </p>
-            {:else}
-              <p>
-                <span class="montserrat-bold text-xl text-rose-500"
-                  >{formatCurrency(productPrice.price)}</span
-                >{formatPackage(productPrice.quantity, true)} ({formatCurrency(
-                  productPrice.price / productPrice.quantity
-                )}/unit)
-              </p>
-            {/if}
-            <p>Shipping and taxes calculated at checkout</p>
+              {#if productPrice.quantity > 1}
+                <p class="text-sm text-stone-500">
+                  {formatCurrency(productPrice.price / productPrice.quantity)}
+                  per unit
+                </p>
+              {/if}
+            </div>
+          {/if}
+
+          <Divider />
+
+          <div class="grid gap-5">
+            <div class="flex flex-col gap-3">
+              <p class="montserrat-bold">Description</p>
+              <p class="leading-7 text-stone-600">{data.product.description}</p>
+            </div>
+            <div class="grid gap-4 rounded-lg bg-stone-50 p-4 sm:grid-cols-2">
+              <div>
+                <p class="text-sm uppercase text-stone-500">Color</p>
+                <p class="montserrat-bold">{data.product.color}</p>
+              </div>
+              {#if data.product.size}
+                <div>
+                  <p class="text-sm uppercase text-stone-500">Size</p>
+                  <p class="montserrat-bold">
+                    {data.product.size} {data.product.size_unit}
+                  </p>
+                </div>
+              {/if}
+            </div>
+          </div>
+
+          {#if productPrice}
             <div class="flex flex-col gap-4">
+              <p class="montserrat-bold">Package</p>
+              <div class="flex flex-wrap gap-3">
+                {#each data.product.prices as price}
+                  <Button
+                    customClass="rounded-full bg-stone-100 px-5 py-3 hover:border-teal-800 hover:bg-white transition-all"
+                    handleClick={() => (productPrice = price)}
+                    selected={productPrice === price}
+                  >
+                    {formatPackage(price.quantity)}
+                  </Button>
+                {/each}
+              </div>
+            </div>
+
+            <div class="flex flex-col items-start gap-3">
+              <p class="montserrat-bold">Quantity</p>
+              <Counter bind:value={quantity} />
+            </div>
+
+            <Divider />
+
+            <div class="flex flex-col gap-4">
+              <p class="text-sm text-stone-500">
+                Shipping and taxes calculated at checkout. Free delivery on
+                orders over $950 CAD.
+              </p>
+              {#if checkoutErrorMessage}
+                <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
+                  {checkoutErrorMessage}
+                </p>
+              {/if}
+              {#if !canCheckout}
+                <p class="rounded-lg bg-amber-50 p-3 text-sm text-stone-700">
+                  Checkout needs live product data. You can still test browsing
+                  and cart behavior locally.
+                </p>
+              {/if}
               <Button
-                customClass="px-8 py-4 rounded-full bg-yellow-400 text-white hover:bg-yellow-500 transition-all disabled:opacity-100 disabled:bg-neutral-100 disabled:text-black"
-                disabled={showAddToCartMessage}
+                customClass="rounded-full bg-[#d8b25a] px-8 py-4 text-stone-950 hover:bg-[#c9a046] transition-all disabled:opacity-100 disabled:bg-stone-100 disabled:text-stone-500"
+                disabled={showAddToCartMessage || !productPrice}
                 handleClick={() => {
-                  cart.addCartItem(data.product, productPrice, quantity);
+                  if (productPrice) cart.addCartItem(data.product, productPrice, quantity);
                   showAddToCartMessage = true;
                 }}
               >
                 {#if showAddToCartMessage}
-                  Added to Cart ( {$cart.cartTotalItems} )
+                  Added to Cart ({$cart.cartTotalItems})
                 {:else}
                   Add to Cart
                 {/if}
               </Button>
               <Button
-                customClass="px-8 py-4 rounded-full bg-orange-400 text-white hover:bg-orange-500 transition-all disabled:opacity-100 disabled:bg-neutral-100 disabled:text-black"
-                disabled={isLoadingCheckout}
+                customClass="rounded-full bg-teal-900 px-8 py-4 text-white hover:bg-teal-800 transition-all disabled:bg-stone-100 disabled:text-stone-500 disabled:opacity-100"
+                disabled={isLoadingCheckout || !canCheckout}
                 handleClick={async () => await checkout()}
               >
                 {#if isLoadingCheckout}
@@ -366,9 +277,9 @@
                 {/if}
               </Button>
             </div>
-          </div>
-        {/if}
-      </div>
+          {/if}
+        </div>
+      </aside>
     </div>
   </div>
 {/if}

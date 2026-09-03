@@ -1,8 +1,9 @@
 /** @format */
 
 import { getOrders } from '$api/order';
+import type { PageServerLoad } from './$types';
 
-export const load = async ({ locals: { getSession } }) => {
+export const load: PageServerLoad = async ({ locals: { getSession } }) => {
   const session = await getSession();
 
   let orders: any = [];

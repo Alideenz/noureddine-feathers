@@ -2,11 +2,12 @@
 
 // svelte
 import { fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
-export const actions = {
-  default: async ({ request, url, locals: { supabase, getSession } }) => {
+export const actions: Actions = {
+  default: async ({ request, locals: { supabase, getSession } }) => {
     const formData = await request.formData();
-    const displayName = formData.get('display-name');
+    const displayName = String(formData.get('display-name') || '');
 
     if (!displayName || displayName.length < 3) {
       return fail(400, {
@@ -17,6 +18,14 @@ export const actions = {
     }
 
     const session = await getSession();
+
+    if (!session) {
+      return fail(401, {
+        displayName,
+        message: 'Please sign in to update your profile.',
+        success: false,
+      });
+    }
 
     const { error } = await supabase
       .from('user_profile')
@@ -42,7 +51,7 @@ export const actions = {
 // api
 import { getProfileById } from '$api/profile.js';
 
-export async function load({ params, locals: { supabase, getSession } }: any) {
+export const load: PageServerLoad = async ({ locals: { getSession } }) => {
   const session = await getSession();
 
   let userProfile;
@@ -54,4 +63,4 @@ export async function load({ params, locals: { supabase, getSession } }: any) {
   return {
     userProfile,
   };
-}
+};

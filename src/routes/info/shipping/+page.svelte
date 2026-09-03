@@ -17,7 +17,7 @@
   <Heading>
     <span>Shipping</span>
   </Heading>
-  <p>All orders above $600 will be shipped for free.</p>
+  <p>All orders above $950 CAD will be shipped for free.</p>
   <Divider />
   <p>
     If you have any further questions, please contact us by email at

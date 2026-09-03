@@ -31,8 +31,8 @@ const getOrders = async (
   `
     )
     .match(filters)
-    .order(sort.key, sort.value);
-  // .limit(limit)
+    .order(sort.key, sort.value)
+    .limit(limit);
 
   if (error) {
     console.log("[getOrders]:[error]", error);

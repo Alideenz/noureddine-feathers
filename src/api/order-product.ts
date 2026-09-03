@@ -28,8 +28,8 @@ const getOrderProducts = async (
   `
     )
     .match(filters)
-    .order(sort.key, sort.value);
-  // .limit(limit)
+    .order(sort.key, sort.value)
+    .limit(limit);
 
   if (error) {
     console.log('[getOrderProducts]:[error]', error);
