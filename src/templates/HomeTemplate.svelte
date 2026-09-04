@@ -54,17 +54,18 @@
       <div class="flex flex-col gap-3">
         <p class="nf-eyebrow">Why Noureddine</p>
         <h2 class="nf-display text-4xl leading-[1.02] text-stone-950">
-          Practical tools with a craft story behind them.
+          Soft on glass, useful in the corners.
         </h2>
       </div>
       <p class="leading-7 text-stone-600">
-        Each feather duster is handmade from fine, washed, and treated natural
-        ostrich feathers selected for softness, reach, and dust-holding ability.
+        Soft ostrich plumes lift fine dust from glass, picture frames, plants,
+        shelves, vents, and crowded displays without scraping the surface or
+        knocking small pieces out of place.
       </p>
       <p class="leading-7 text-stone-600">
-        The catalog stays focused: professional dusters, colorful ostrich
-        feathers, lambswool options, and decorative eggshells for customers who
-        care about quality materials.
+        We keep the range practical: fuller feather heads for delicate dusting,
+        lambswool for daily route work, and simple bulk quantities that make
+        restocking easier for homes, shops, offices, and cleaning crews.
       </p>
     </div>
   </section>

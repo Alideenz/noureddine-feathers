@@ -9,6 +9,7 @@
   import {
     formatCurrency,
     formatPackage,
+    getProductDisplaySize,
     formatProductTitle,
     getProductImagePath,
     hasCheckoutPrice,
@@ -43,6 +44,7 @@
   let fullImageSrc = '';
 
   $: productTitle = formatProductTitle(data.product);
+  $: productDisplaySize = getProductDisplaySize(data.product);
   $: canCheckout = hasCheckoutPrice(productPrice);
   $: localImages =
     data.product.category === 'Feather Dusters'
@@ -201,12 +203,10 @@
                 <p class="text-sm uppercase text-stone-500">Color</p>
                 <p class="montserrat-bold">{data.product.color}</p>
               </div>
-              {#if data.product.size}
+              {#if productDisplaySize}
                 <div>
                   <p class="text-sm uppercase text-stone-500">Size</p>
-                  <p class="montserrat-bold">
-                    {data.product.size} {data.product.size_unit}
-                  </p>
+                  <p class="montserrat-bold">{productDisplaySize}</p>
                 </div>
               {/if}
             </div>

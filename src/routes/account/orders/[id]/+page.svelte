@@ -18,6 +18,7 @@
     formatCurrency,
     formatText,
     formatName,
+    getProductDisplaySize,
   } from '$helpers/helpers';
 </script>
 
@@ -124,8 +125,8 @@
             <p>
               {orderProduct.stripe_product_id.name} - {orderProduct
                 .stripe_product_id.color}
-              {orderProduct.stripe_product_id.size
-                ? `- ${orderProduct.stripe_product_id.size} ${orderProduct.stripe_product_id.size_unit}`
+              {getProductDisplaySize(orderProduct.stripe_product_id)
+                ? `- ${getProductDisplaySize(orderProduct.stripe_product_id)}`
                 : ''}
             </p>
             <div class="flex flex-col gap-8 lg:grid lg:grid-cols-3">

@@ -142,9 +142,23 @@ const formatName = (
 };
 
 const formatProductTitle = (product: ProductIdentity) => {
+  const productSize = getProductDisplaySize(product);
+
   return `${product.name} - ${product.color}${
-    product.size ? ` - ${product.size} ${product.size_unit}` : ''
+    productSize ? ` - ${productSize}` : ''
   }`;
+};
+
+const getProductDisplaySize = (product: ProductIdentity) => {
+  if (
+    product.name.toLowerCase().includes('extendable lambswool') &&
+    product.size === 42 &&
+    product.size_unit === 'inches'
+  ) {
+    return '26-42 inches';
+  }
+
+  return product.size ? `${product.size} ${product.size_unit}` : '';
 };
 
 const getProductPath = (product: ProductIdentity) => {
@@ -225,6 +239,7 @@ export {
   formatProductTitle,
   getProductPath,
   getProductImagePath,
+  getProductDisplaySize,
   getProductPriceRange,
   getProductPriceSummary,
   hasCheckoutPrice,

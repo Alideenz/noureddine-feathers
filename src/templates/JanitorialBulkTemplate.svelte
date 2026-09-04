@@ -147,7 +147,7 @@
       id: 'lambswool-42',
       name: 'Premium Extendable Lambswool Duster',
       category: 'Lambswool dusters',
-      size: '42 inches',
+      size: '26-42 inches',
       handle: 'Extendable handle',
       image:
         '/products/Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches/0-Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches-1024x1024.webp',
