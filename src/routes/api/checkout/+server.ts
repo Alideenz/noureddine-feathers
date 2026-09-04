@@ -35,6 +35,13 @@ export const POST: RequestHandler = async ({ request }) => {
         (productPrice: any) => productPrice.id === product.productPriceId
       );
 
+      if (!productPrice) {
+        return json(
+          { error: 'One item in your cart has changed. Remove it and add it again.' },
+          { status: 400 }
+        );
+      }
+
       if (
         !productPrice?.stripe_price_id &&
         productPrice.price_source !== 'price-list-override'

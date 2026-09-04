@@ -190,7 +190,7 @@ const getProductPriceSummary = (product: I_Product) => {
   const primaryPrice = product.prices[0];
   const largestPackPrice = product.prices[product.prices.length - 1];
 
-  if (!primaryPrice) return { headline: '', meta: '' };
+  if (!primaryPrice) return { headline: '', meta: '', unitPrice: '', largestPack: '' };
 
   const headline = `${formatCurrency(primaryPrice.price)} ${formatPackage(
     primaryPrice.quantity,
@@ -208,7 +208,7 @@ const getProductPriceSummary = (product: I_Product) => {
       : '';
   const meta = [unitPrice, largestPack].filter(Boolean).join(' · ');
 
-  return { headline, meta };
+  return { headline, meta, unitPrice, largestPack };
 };
 
 export {

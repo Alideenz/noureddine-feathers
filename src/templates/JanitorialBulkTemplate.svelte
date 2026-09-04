@@ -116,7 +116,7 @@
       ],
       bestFor: 'Offices, ledges, mid-height shelving',
       priceTiers: [
-        { label: '1 dz.', dozens: 1, unitPrice: 8.95, total: 107.4 },
+        { label: '1 dz.', dozens: 1, unitPrice: 116.35 / 12, total: 116.35 },
         { label: '5 dz.', dozens: 5, unitPrice: 8.45, total: 507 },
       ],
       dozens: 3,
@@ -138,7 +138,7 @@
       ],
       bestFor: 'Daily turnover and general dusting',
       priceTiers: [
-        { label: '3 dz.', dozens: 3, unitPrice: 4.15, total: 149.4 },
+        { label: '3 dz.', dozens: 3, unitPrice: 4.56, total: 164.16 },
       ],
       dozens: 2,
       color: 'Premium Yellow',

@@ -29,25 +29,25 @@
 >
   <Link href={productPath} customClass="block" ariaLabel={productTitle}>
     <div
-      class="relative aspect-[4/5] overflow-hidden bg-[#f4f2ea]"
+      class="relative aspect-[5/4] overflow-hidden bg-[#f4f2ea]"
     >
-      <div class="absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-stone-700 shadow-sm">
+      <div class="absolute left-3 top-3 z-10 max-w-[calc(100%-1.5rem)] rounded-full bg-white/90 px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-stone-700 shadow-sm">
         {product.category}
       </div>
         <img
           {src}
           alt={product.name}
-          class="h-full w-full object-contain p-7 transition-all duration-500 group-hover:scale-105"
+          class="h-full w-full object-contain p-5 transition-all duration-500 group-hover:scale-105 sm:p-6"
           loading="lazy"
         />
     </div>
   </Link>
 
-  <div class="flex flex-1 flex-col gap-5 p-5">
-    <div class="flex flex-1 flex-col gap-4">
+  <div class="flex flex-1 flex-col justify-between gap-5 p-5">
+    <div class="flex min-h-[96px] flex-col gap-4">
       <Link
         href={productPath}
-        customClass="text-base font-semibold leading-6 text-stone-950 transition-all group-hover:text-teal-900"
+        customClass="text-base font-semibold leading-7 text-stone-950 transition-all group-hover:text-teal-900"
         ariaLabel={productTitle}
       >
         {productTitle}
@@ -56,14 +56,19 @@
 
     {#if priceSummary.headline}
       <div class="border-t border-stone-200 pt-4">
-        <p class="text-lg font-semibold text-teal-900">
+        <p class="text-lg font-semibold leading-tight text-teal-900">
           {priceSummary.headline}
         </p>
-        {#if priceSummary.meta}
-          <p class="mt-1 text-sm leading-6 text-stone-500">
-            {priceSummary.meta}
-          </p>
-        {/if}
+        <div class="mt-3 grid gap-1.5 text-sm leading-6 text-stone-500">
+          {#if priceSummary.unitPrice}
+            <p>{priceSummary.unitPrice}</p>
+          {/if}
+          {#if priceSummary.largestPack}
+            <p class="font-medium text-stone-700">
+              {priceSummary.largestPack}
+            </p>
+          {/if}
+        </div>
       </div>
     {/if}
   </div>

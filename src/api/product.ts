@@ -36,7 +36,7 @@ const getProductById = async (id: string): Promise<I_Product | undefined> => {
       'id, price, quantity, shipping_fee, product_id, stripe_price_id, stripe_tax_rate_ids'
     )
     .order('price', { ascending: true })
-    .match({ product_id: id });
+    .match({ product_id: id, is_hidden: SB_TEST });
 
   const [
     { data: productData, error: productError },
@@ -93,7 +93,8 @@ const getProducts = async (
     .select(
       'id, price, quantity, shipping_fee, product_id, stripe_price_id, stripe_tax_rate_ids'
     )
-    .order('price', { ascending: true });
+    .order('price', { ascending: true })
+    .match({ is_hidden: SB_TEST });
 
   const [
     { data: productData, error: productError },
@@ -132,15 +133,15 @@ const getProductPricesByIds = async (productPriceIds: any) => {
     .select(
       'id, price, quantity, shipping_fee, product_id, stripe_price_id, stripe_tax_rate_ids'
     )
-    .in('id', productPriceIds);
+    .in('id', productPriceIds)
+    .match({ is_hidden: SB_TEST });
 
   if (error) {
     console.log('[getProductPricesByIds]:[error]', error);
     return getFallbackProductPricesByIds(productPriceIds);
   }
 
-  if (!data || data.length === 0)
-    return getFallbackProductPricesByIds(productPriceIds);
+  if (!data) return getFallbackProductPricesByIds(productPriceIds);
 
   return normalizeProductPrices(data);
 };
