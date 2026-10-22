@@ -1,619 +1,940 @@
-<!-- @format -->
 <script lang="ts">
-  import Button from '$components/Button.svelte';
-  import Heading from '$components/Heading.svelte';
-  import Link from '$components/Link.svelte';
+  import { onMount, tick } from 'svelte';
+  import { page } from '$app/stores';
+  import {
+    ArrowLeft,
+    ArrowUpRight,
+    Check,
+    Copy,
+    Mail,
+    Minus,
+    Package,
+    Plus,
+    RotateCcw,
+  } from 'lucide-svelte';
+  import {
+    bulkDusters,
+    clampDozens,
+    estimateBulkLine,
+    getBulkImage,
+    getPresetQuantities,
+    selectionKey,
+  } from '$helpers/bulk-order';
   import { formatCurrency } from '$helpers/helpers';
 
-  type DusterColor = {
-    label: string;
-    hex: string;
-  };
-
-  type DusterSelection = {
-    id: string;
-    name: string;
-    category: 'Feather dusters' | 'Lambswool dusters';
-    size: string;
-    handle: string;
-    image: string;
-    colors: DusterColor[];
-    bestFor: string;
-    priceTiers: {
-      label: string;
-      dozens: number;
-      unitPrice: number;
-      total: number;
-    }[];
-    dozens: number;
-    color: string;
-  };
-
-  const presetOptions = [
-    {
-      id: '12-dozen',
-      label: '12 dozen',
-      eyebrow: 'Starter route',
-      text: 'Balanced mix for one team or one location.',
-    },
-    {
-      id: '24-dozen',
-      label: '24 dozen',
-      eyebrow: 'Multi-location',
-      text: 'Higher-volume mix for larger janitorial routes.',
-    },
-    {
-      id: 'custom',
-      label: 'Custom',
-      eyebrow: 'Build your own',
-      text: 'Choose the exact duster mix and request a quote.',
-    },
-  ];
-
-  const quantityOptions = [0, 1, 2, 3, 4, 6, 12];
-  const categoryOptions = ['All', 'Feather dusters', 'Lambswool dusters'];
-
-  let selectedPreset = '12-dozen';
-  let selectedCategory = 'All';
+  let preset = '12-dozen';
+  let quantities = getPresetQuantities(preset);
+  let category = 'All dusters';
   let companyName = '';
   let contactName = '';
   let email = '';
   let phone = '';
   let notes = '';
-
-  let selections: DusterSelection[] = [
-    {
-      id: 'ostrich-16',
-      name: 'Premium Ostrich Feather Duster',
-      category: 'Feather dusters',
-      size: '16 inches',
-      handle: 'Short handle',
-      image:
-        '/products/Premium-Ostrich-Feather-Duster-Premium-Black-16-inches/0-Premium-Ostrich-Feather-Duster-Premium-Black-16-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Black', hex: '#171717' },
-        { label: 'Premium Gray', hex: '#9ca3af' },
-      ],
-      bestFor: 'Desks, counters, shelves',
-      priceTiers: [
-        { label: '1 dz.', dozens: 1, unitPrice: 6.25, total: 75 },
-        { label: '5 dz.', dozens: 5, unitPrice: 5.75, total: 345 },
-      ],
-      dozens: 3,
-      color: 'Premium Black',
-    },
-    {
-      id: 'ostrich-24',
-      name: 'Premium Ostrich Feather Duster',
-      category: 'Feather dusters',
-      size: '24 inches',
-      handle: 'Long handle',
-      image:
-        '/products/Premium-Ostrich-Feather-Duster-Premium-Gray-24-inches/0-Premium-Ostrich-Feather-Duster-Premium-Gray-24-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Gray', hex: '#9ca3af' },
-        { label: 'Premium Black', hex: '#171717' },
-      ],
-      bestFor: 'Fixtures, lobbies, higher shelves',
-      priceTiers: [
-        { label: '1 dz.', dozens: 1, unitPrice: 11.95, total: 143.4 },
-        { label: '5 dz.', dozens: 5, unitPrice: 11.45, total: 687 },
-      ],
-      dozens: 3,
-      color: 'Premium Gray',
-    },
-    {
-      id: 'ostrich-20',
-      name: 'Premium Ostrich Feather Duster',
-      category: 'Feather dusters',
-      size: '20 inches',
-      handle: 'Stained wood handle',
-      image:
-        '/products/Premium-Ostrich-Feather-Duster-Premium-Black-20-inches/0-Premium-Ostrich-Feather-Duster-Premium-Black-20-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Black', hex: '#171717' },
-        { label: 'Premium Gray', hex: '#9ca3af' },
-      ],
-      bestFor: 'Offices, ledges, mid-height shelving',
-      priceTiers: [
-        { label: '1 dz.', dozens: 1, unitPrice: 116.35 / 12, total: 116.35 },
-        { label: '5 dz.', dozens: 5, unitPrice: 8.45, total: 507 },
-      ],
-      dozens: 3,
-      color: 'Premium Black',
-    },
-    {
-      id: 'lambswool-26',
-      name: 'Premium Lambswool Duster',
-      category: 'Lambswool dusters',
-      size: '26 inches',
-      handle: 'Standard handle',
-      image:
-        '/products/Premium-Lambswool-Duster-Premium-Yellow-26-inches/0-Premium-Lambswool-Duster-Premium-Yellow-26-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Yellow', hex: '#f8d75b' },
-        { label: 'Premium Black', hex: '#171717' },
-        { label: 'Premium Green', hex: '#3f7d4c' },
-        { label: 'Premium Orange', hex: '#f97316' },
-      ],
-      bestFor: 'Daily turnover and general dusting',
-      priceTiers: [
-        { label: '3 dz.', dozens: 3, unitPrice: 4.56, total: 164.16 },
-      ],
-      dozens: 2,
-      color: 'Premium Yellow',
-    },
-    {
-      id: 'lambswool-42',
-      name: 'Premium Extendable Lambswool Duster',
-      category: 'Lambswool dusters',
-      size: '26-42 inches',
-      handle: 'Extendable handle',
-      image:
-        '/products/Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches/0-Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Black', hex: '#171717' },
-        { label: 'Premium Blue', hex: '#2563eb' },
-        { label: 'Premium Orange', hex: '#f97316' },
-      ],
-      bestFor: 'Vents, ceiling fans, high reach',
-      priceTiers: [
-        { label: '3 dz.', dozens: 3, unitPrice: 5.15, total: 185.4 },
-      ],
-      dozens: 1,
-      color: 'Premium Black',
-    },
-    {
-      id: 'lambswool-detachable',
-      name: 'Detachable Extension Lambswool Duster',
-      category: 'Lambswool dusters',
-      size: '20-inch head',
-      handle: '41-65 inch detachable extension handle',
-      image:
-        '/products/Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches/0-Premium-Extendable-Lambswool-Duster-Premium-Black-42-inches-1024x1024.webp',
-      colors: [
-        { label: 'Premium Black', hex: '#171717' },
-        { label: 'Premium Yellow', hex: '#f8d75b' },
-      ],
-      bestFor: 'Tall fixtures, deep reach, extension work',
-      priceTiers: [
-        { label: '2 dz.', dozens: 2, unitPrice: 8.6, total: 206.4 },
-      ],
-      dozens: 0,
-      color: 'Premium Black',
-    },
-  ];
-
-  const setPreset = (presetId: string) => {
-    selectedPreset = presetId;
-
-    if (presetId === '12-dozen') {
-      selections = selections.map((selection) => {
-        const dozensById: { [key: string]: number } = {
-          'ostrich-16': 3,
-          'ostrich-20': 3,
-          'ostrich-24': 3,
-          'lambswool-26': 2,
-          'lambswool-42': 1,
-        };
-
-        return { ...selection, dozens: dozensById[selection.id] || 0 };
-      });
-    }
-
-    if (presetId === '24-dozen') {
-      selections = selections.map((selection) => {
-        const dozensById: { [key: string]: number } = {
-          'ostrich-16': 6,
-          'ostrich-20': 6,
-          'ostrich-24': 6,
-          'lambswool-26': 4,
-          'lambswool-42': 2,
-        };
-
-        return { ...selection, dozens: dozensById[selection.id] || 0 };
-      });
-    }
-  };
-
-  const updateSelection = (
-    selectionId: string,
-    changes: Partial<DusterSelection>
-  ) => {
-    selectedPreset = 'custom';
-    selections = selections.map((selection) =>
-      selection.id === selectionId ? { ...selection, ...changes } : selection
-    );
-  };
-
-  const adjustDozens = (selectionId: string, amount: number) => {
-    const selection = selections.find((item) => item.id === selectionId);
-    if (!selection) return;
-
-    updateSelection(selectionId, {
-      dozens: Math.max(0, Math.min(200, selection.dozens + amount)),
-    });
-  };
-
-  const getBestTier = (selection: DusterSelection) => {
-    const qualifiedTiers = selection.priceTiers.filter(
-      (tier) => selection.dozens >= tier.dozens
-    );
-
-    return qualifiedTiers[qualifiedTiers.length - 1] || selection.priceTiers[0];
-  };
-
-  const getEstimatedLineTotal = (selection: DusterSelection) => {
-    if (selection.dozens === 0) return 0;
-
-    const tier = getBestTier(selection);
-
-    return selection.dozens * 12 * tier.unitPrice;
-  };
-
-  const buildQuoteBody = () => {
-    const quoteDozens = selections.reduce(
-      (total, selection) => total + selection.dozens,
-      0
-    );
-    const quotePieces = quoteDozens * 12;
-    const quoteEstimate = selections.reduce(
-      (total, selection) => total + getEstimatedLineTotal(selection),
-      0
-    );
-    const selectedItems = selections
-      .filter((selection) => selection.dozens > 0)
-      .map((selection) => {
-        const tier = getBestTier(selection);
-
-        return `- ${selection.dozens} dozen ${selection.name}, ${selection.size}, ${selection.color}, ${formatCurrency(tier.unitPrice)} each, ${formatCurrency(getEstimatedLineTotal(selection))} estimate`;
-      })
-      .join('\n');
-
-    return [
-      'Janitorial bulk duster quote request',
-      '',
-      `Company: ${companyName || '[company name]'}`,
-      `Contact: ${contactName || '[contact name]'}`,
-      `Email: ${email || '[email]'}`,
-      `Phone: ${phone || '[phone]'}`,
-      '',
-      `Estimated total: ${quoteDozens} dozen / ${quotePieces} dusters / ${formatCurrency(quoteEstimate)}`,
-      '',
-      selectedItems || '- [add duster selections]',
-      '',
-      `Notes: ${notes || '[delivery address, timeline, preferred mix, recurring order needs]'}`,
-    ].join('\n');
-  };
-
-  $: filteredSelections =
-    selectedCategory === 'All'
-      ? selections
-      : selections.filter((selection) => selection.category === selectedCategory);
-  $: selectedSelections = selections.filter((selection) => selection.dozens > 0);
-  $: totalDozens = selections.reduce(
-    (total, selection) => total + selection.dozens,
-    0
+  let copied = false;
+  let copyError = '';
+  let copyReset: ReturnType<typeof setTimeout>;
+  let showContact = false;
+  let activeColors: Record<string, string> = Object.fromEntries(
+    bulkDusters.map((duster) => [duster.id, duster.colors[0].label])
   );
-  $: totalPieces = totalDozens * 12;
-  $: estimatedTotal = selections.reduce(
-    (total, selection) => total + getEstimatedLineTotal(selection),
-    0
+  const setPreset = (value: string) => {
+    preset = value;
+    quantities = getPresetQuantities(value);
+    activeColors = Object.fromEntries(
+      bulkDusters.map((duster) => [duster.id, duster.colors[0].label])
+    );
+    copied = false;
+  };
+  const openContact = async () => {
+    showContact = true;
+    await tick();
+    document.getElementById('quote-name')?.focus();
+  };
+  const setQuantity = (id: string, color: string, value: number) => {
+    preset = 'custom';
+    quantities = {
+      ...quantities,
+      [selectionKey(id, color)]: clampDozens(value),
+    };
+    activeColors = { ...activeColors, [id]: color };
+    copied = false;
+  };
+  const adjust = (id: string, color: string, amount: number) =>
+    setQuantity(id, color, (quantities[selectionKey(id, color)] || 0) + amount);
+  $: visibleDusters = bulkDusters.filter(
+    (duster) => category === 'All dusters' || category === duster.category
   );
-  $: quoteTier =
-    totalDozens >= 24
-      ? 'Large account quote'
-      : totalDozens >= 12
-        ? 'Bulk quote'
-        : 'Custom quote';
+  $: lines = bulkDusters.flatMap((duster) =>
+    duster.colors
+      .map((color) => ({
+        duster,
+        color,
+        dozens: quantities[selectionKey(duster.id, color.label)] || 0,
+      }))
+      .filter((line) => line.dozens > 0)
+  );
+  $: totalDozens = lines.reduce((sum, line) => sum + line.dozens, 0);
+  $: estimatedTotal =
+    Math.round(
+      lines.reduce(
+        (sum, line) => sum + estimateBulkLine(line.duster, line.dozens),
+        0
+      ) * 100
+    ) / 100;
+  $: quoteBody = [
+    'Janitorial bulk duster quote request',
+    '',
+    `Company: ${companyName}`,
+    `Contact: ${contactName}`,
+    `Email: ${email}`,
+    `Phone: ${phone}`,
+    '',
+    ...lines.map(
+      (line) =>
+        `${line.dozens} dozen - ${line.duster.name}, ${line.duster.size}, ${
+          line.color.label
+        }: ${formatCurrency(
+          estimateBulkLine(line.duster, line.dozens)
+        )} estimated`
+    ),
+    '',
+    `Total: ${totalDozens} dozen / ${totalDozens * 12} dusters`,
+    `Estimated product total: ${formatCurrency(
+      estimatedTotal
+    )} CAD, before shipping and tax`,
+    '',
+    `Delivery details and notes: ${notes}`,
+    '',
+    'Please confirm pricing, availability and delivery.',
+  ].join('\n');
   $: mailtoHref = `mailto:info@nprofiles.com?subject=${encodeURIComponent(
     'Janitorial bulk duster quote'
-  )}&body=${encodeURIComponent(buildQuoteBody())}`;
+  )}&body=${encodeURIComponent(quoteBody)}`;
+  const copyQuote = async () => {
+    try {
+      await navigator.clipboard.writeText(quoteBody);
+      copied = true;
+      copyError = '';
+      clearTimeout(copyReset);
+      copyReset = setTimeout(() => (copied = false), 4000);
+    } catch {
+      copyError =
+        'Copy is unavailable. Use the email option or contact info@nprofiles.com.';
+    }
+  };
+  onMount(() => {
+    const id = $page.url.searchParams.get('style');
+    const requestedColor = $page.url.searchParams.get('color');
+    const duster = bulkDusters.find((item) => item.id === id);
+    if (duster) {
+      const color =
+        duster.colors.find((item) => item.label === requestedColor)?.label ||
+        duster.colors[0].label;
+      quantities = {
+        [selectionKey(duster.id, color)]: clampDozens(
+          Number($page.url.searchParams.get('dozens')),
+          1
+        ),
+      };
+      preset = 'custom';
+      activeColors = { ...activeColors, [duster.id]: color };
+    }
+    return () => clearTimeout(copyReset);
+  });
 </script>
 
-<div class="bg-stone-50">
-  <section class="border-b border-stone-200 bg-[#fffaf0]">
-    <div class="nf-page grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:items-end">
-      <div class="flex flex-col gap-4">
-        <p class="nf-eyebrow">Janitorial bulk orders</p>
-        <Heading customClass="max-w-4xl text-4xl lg:text-5xl">
-          Build a mixed duster quote in minutes
-        </Heading>
-        <p class="max-w-3xl leading-7 text-stone-600">
-          Choose feather dusters and lambswool dusters by size, color, and
-          dozen quantity. Start with 12 dozen or 24 dozen, then adjust the mix
-          for your routes.
+<section class="bulk-intro">
+  <div class="nf-page">
+    <a class="back-link" href="/"
+      ><ArrowLeft size={14} aria-hidden="true" /> Back to the shop</a
+    >
+    <div class="bulk-heading">
+      <div>
+        <p class="nf-eyebrow">
+          For janitorial teams, businesses &amp; trade buyers
+        </p>
+        <h1 class="nf-display">Your bulk duster order.</h1>
+        <p>
+          Mix feather and lambswool dusters by size and color.<br />Choose a
+          starting quantity, adjust the mix, and request a quote.
         </p>
       </div>
-
-      <div class="nf-panel-modern grid grid-cols-3 overflow-hidden text-center">
-        <div class="border-r border-stone-200 p-4">
-          <p class="montserrat-bold text-3xl text-teal-800">{totalDozens}</p>
-          <p class="mt-1 text-xs uppercase text-stone-500">dozen</p>
-        </div>
-        <div class="border-r border-stone-200 p-4">
-          <p class="montserrat-bold text-3xl text-teal-800">{totalPieces}</p>
-          <p class="mt-1 text-xs uppercase text-stone-500">dusters</p>
-        </div>
-        <div class="p-4">
-          <p class="montserrat-bold text-lg text-teal-800">
-            {formatCurrency(estimatedTotal)}
-          </p>
-          <p class="mt-1 text-xs uppercase text-stone-500">estimate</p>
-        </div>
+      <div class="intro-count" aria-live="polite">
+        <strong>{totalDozens}</strong><span
+          >dozen selected<br />{totalDozens * 12} dusters</span
+        >
       </div>
     </div>
+  </div>
+</section>
+
+<div class="nf-page bulk-layout">
+  <section class="bulk-options" aria-labelledby="build-title">
+    <div class="builder-heading">
+      <h2 id="build-title">1. Choose your mix</h2>
+      <button class="reset-button" on:click={() => setPreset('custom')}
+        ><RotateCcw size={14} aria-hidden="true" /> Clear quantities</button
+      >
+    </div>
+    <div class="preset-grid" role="group" aria-label="Starting order quantity">
+      {#each [{ id: '12-dozen', label: '12 dozen', detail: '144 dusters' }, { id: '24-dozen', label: '24 dozen', detail: '288 dusters' }, { id: 'custom', label: 'Custom mix', detail: 'Start from zero' }] as option}
+        <button
+          class:chosen={preset === option.id}
+          aria-pressed={preset === option.id}
+          on:click={() => setPreset(option.id)}
+          ><span class="preset-radio"
+            >{#if preset === option.id}<Check
+                size={12}
+                aria-hidden="true"
+              />{/if}</span
+          ><span
+            ><strong>{option.label}</strong><small>{option.detail}</small></span
+          ></button
+        >
+      {/each}
+    </div>
+    <div class="option-toolbar">
+      <div class="nf-segments" role="group" aria-label="Filter duster types">
+        {#each ['All dusters', 'Feather dusters', 'Lambswool dusters'] as option}<button
+            class="nf-segment"
+            aria-pressed={category === option}
+            on:click={() => (category = option)}>{option}</button
+          >{/each}
+      </div>
+      <span>Quantities in dozens</span>
+    </div>
+    <div class="duster-list">
+      {#each visibleDusters as duster}
+        <article class="duster-row" aria-labelledby={`title-${duster.id}`}>
+          <div class="duster-info">
+            <div class="duster-thumb">
+              {#if getBulkImage(duster, activeColors[duster.id])}<img
+                  src={getBulkImage(duster, activeColors[duster.id])}
+                  alt={`${activeColors[duster.id]} ${duster.name}, ${
+                    duster.size
+                  }`}
+                  width="100"
+                  height="100"
+                  loading="lazy"
+                />{:else}<Package
+                  size={30}
+                  strokeWidth={1}
+                  aria-hidden="true"
+                /><span>Quote only</span>{/if}
+            </div>
+            <div class="duster-description">
+              <h3 id={`title-${duster.id}`}>{duster.name}</h3>
+              <p class="duster-size">
+                {duster.size} <span>/ {duster.handle}</span>
+              </p>
+              <p class="duster-use">{duster.bestFor}</p>
+              <div class="tier-list">
+                {#each duster.priceTiers as tier}<span
+                    >{tier.dozens} dz.
+                    <strong>{formatCurrency(tier.total)}</strong></span
+                  >{/each}
+              </div>
+            </div>
+          </div>
+          <div class="color-quantities">
+            {#each duster.colors as color}
+              {@const quantity =
+                quantities[selectionKey(duster.id, color.label)] || 0}
+              <div class="color-quantity" class:has-quantity={quantity > 0}>
+                <label for={`${duster.id}-${color.label}`}
+                  ><span
+                    class="nf-swatch"
+                    style:background-color={color.hex}
+                  />{color.label}</label
+                >
+                <div class="quantity-stepper">
+                  <button
+                    aria-label={`Decrease ${duster.size} ${color.label} ${duster.name} by one dozen`}
+                    disabled={quantity === 0}
+                    on:click={() => adjust(duster.id, color.label, -1)}
+                    ><Minus size={14} aria-hidden="true" /></button
+                  ><input
+                    id={`${duster.id}-${color.label}`}
+                    aria-label={`${duster.size} ${color.label} ${duster.name} dozens`}
+                    type="number"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value={quantity}
+                    on:input={(event) =>
+                      setQuantity(
+                        duster.id,
+                        color.label,
+                        Number(event.currentTarget.value)
+                      )}
+                  /><button
+                    aria-label={`Increase ${duster.size} ${color.label} ${duster.name} by one dozen`}
+                    disabled={quantity >= 200}
+                    on:click={() => adjust(duster.id, color.label, 1)}
+                    ><Plus size={14} aria-hidden="true" /></button
+                  >
+                </div>
+              </div>
+            {/each}
+          </div>
+        </article>
+      {/each}
+    </div>
+    <p class="builder-note">
+      Amounts are product estimates before shipping and tax. Published pack
+      rates are used to estimate custom quantities; final pricing is confirmed
+      with your quote.
+    </p>
   </section>
 
-  <section class="nf-page grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-    <div class="flex flex-col gap-5">
-      <div class="grid gap-4 md:grid-cols-3">
-        {#each presetOptions as preset}
-          <button
-            class={`rounded-lg border p-4 text-left transition-all ${
-              selectedPreset === preset.id
-                ? 'border-teal-800 bg-white shadow-xl'
-                : 'border-stone-200 bg-white/80 hover:-translate-y-0.5 hover:border-teal-700'
-            }`}
-            on:click={() => setPreset(preset.id)}
-          >
-            <span class="text-xs uppercase tracking-[0.18em] text-stone-500">
-              {preset.eyebrow}
-            </span>
-            <span class="montserrat-bold mt-2 block text-2xl text-stone-950">
-              {preset.label}
-            </span>
-            <span class="mt-2 block text-sm leading-6 text-stone-600">
-              {preset.text}
-            </span>
-          </button>
-        {/each}
-      </div>
-
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-3 rounded-lg border border-stone-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+  <aside
+    class="quote-summary"
+    class:editing={showContact}
+    aria-labelledby="summary-title"
+  >
+    <div class="summary-top">
+      <h2 id="summary-title">2. Review your order</h2>
+      <span>CAD</span>
+    </div>
+    <div class="summary-total" aria-live="polite" aria-atomic="true">
+      <span>Estimated product total</span><strong
+        >{formatCurrency(estimatedTotal)}</strong
+      >
+      <p>{totalDozens} dozen <span>/</span> {totalDozens * 12} dusters</p>
+    </div>
+    <!-- The scrollable order list needs a keyboard focus target. -->
+    <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+    <div
+      class="summary-lines"
+      tabindex="0"
+      role="region"
+      aria-label="Selected duster quantities"
+    >
+      {#each lines as line}<div>
           <div>
-            <p class="nf-eyebrow">Duster options</p>
-            <h2 class="montserrat-bold mt-1 text-2xl text-stone-950">
-              Select by type, color, and quantity
-            </h2>
+            <span
+              class="nf-swatch"
+              style:background-color={line.color.hex}
+            /><span
+              >{line.duster.size}
+              {line.duster.category === 'Feather dusters'
+                ? 'ostrich'
+                : line.duster.id === 'lambswool-detachable'
+                ? 'detachable'
+                : 'lambswool'}<small
+                >{line.color.label} &middot; {line.dozens} dz.</small
+              ></span
+            >
           </div>
-          <div class="flex flex-wrap gap-2">
-            {#each categoryOptions as category}
-              <button
-                class={`rounded-full border px-4 py-2 text-sm transition-all ${
-                  selectedCategory === category
-                    ? 'border-teal-800 bg-teal-800 text-white'
-                    : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-teal-700'
-                }`}
-                on:click={() => (selectedCategory = category)}
-              >
-                {category}
-              </button>
-            {/each}
-          </div>
-        </div>
-
-        <div class="grid gap-3">
-          {#each filteredSelections as selection}
-            <article class="grid gap-4 rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition-all hover:border-teal-700 hover:shadow-lg md:grid-cols-[92px_minmax(0,1fr)]">
-              <img
-                src={selection.image}
-                alt={`${selection.name} ${selection.size}`}
-                class="aspect-square w-[92px] rounded-lg bg-stone-100 object-contain p-2"
-              />
-
-              <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-                <div class="flex flex-col gap-3">
-                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p class="text-xs uppercase tracking-[0.16em] text-teal-800">
-                        {selection.category}
-                      </p>
-                      <h3 class="montserrat-bold mt-1 text-lg text-stone-950">
-                        {selection.name}
-                      </h3>
-                    </div>
-                    <div class="flex flex-wrap gap-2 text-xs text-stone-600">
-                      <span class="rounded-full bg-stone-100 px-3 py-1">
-                        {selection.size}
-                      </span>
-                      <span class="rounded-full bg-stone-100 px-3 py-1">
-                        {selection.handle}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p class="text-sm leading-6 text-stone-600">
-                    {selection.bestFor}
-                  </p>
-
-                  <div class="flex flex-wrap gap-2">
-                    {#each selection.priceTiers as tier}
-                      <span class="rounded-full bg-[#fff9ed] px-3 py-1 text-sm text-stone-700">
-                        {tier.label} {formatCurrency(tier.unitPrice)} ea. /
-                        {formatCurrency(tier.total)}
-                      </span>
-                    {/each}
-                  </div>
-
-                  <div class="flex flex-col gap-2">
-                    <p class="montserrat-bold text-sm text-stone-950">Color</p>
-                    <div class="flex flex-wrap gap-2">
-                      {#each selection.colors as color}
-                        <button
-                          class={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-all ${
-                            selection.color === color.label
-                              ? 'border-teal-800 bg-teal-50 text-teal-950'
-                              : 'border-stone-200 bg-white text-stone-700 hover:border-teal-700'
-                          }`}
-                          on:click={() =>
-                            updateSelection(selection.id, {
-                              color: color.label,
-                            })}
-                        >
-                          <span
-                            class="h-4 w-4 rounded-full border border-stone-300"
-                            style={`background-color: ${color.hex};`}
-                          />
-                          <span>{color.label.replace('Premium ', '')}</span>
-                        </button>
-                      {/each}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex flex-col justify-between gap-3 rounded-lg bg-stone-50 p-3">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="montserrat-bold text-sm text-stone-950">Dozens</p>
-                    <div class="flex items-center rounded-full border border-stone-200 bg-white">
-                      <Button
-                        customClass="h-9 w-9 rounded-full border-0 p-0 hover:bg-stone-100"
-                        ariaLabel={`Decrease ${selection.name} ${selection.size}`}
-                        handleClick={() => adjustDozens(selection.id, -1)}
-                      >
-                        -
-                      </Button>
-                      <input
-                        class="h-9 w-14 bg-transparent text-center text-sm outline-none"
-                        type="number"
-                        min="0"
-                        max="200"
-                        bind:value={selection.dozens}
-                        on:input={() =>
-                          updateSelection(selection.id, {
-                            dozens: Math.max(
-                              0,
-                              Math.min(200, selection.dozens || 0)
-                            ),
-                          })}
-                        aria-label={`Custom dozens for ${selection.name} ${selection.size}`}
-                      />
-                      <Button
-                        customClass="h-9 w-9 rounded-full border-0 p-0 hover:bg-stone-100"
-                        ariaLabel={`Increase ${selection.name} ${selection.size}`}
-                        handleClick={() => adjustDozens(selection.id, 1)}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-wrap gap-2">
-                    {#each quantityOptions as quantityOption}
-                      <Button
-                        customClass={`min-w-[42px] rounded-full px-3 py-2 text-sm transition-all ${
-                          selection.dozens === quantityOption
-                            ? 'bg-teal-800 text-white'
-                            : 'bg-white hover:bg-teal-800 hover:text-white'
-                        }`}
-                        selected={selection.dozens === quantityOption}
-                        handleClick={() =>
-                          updateSelection(selection.id, {
-                            dozens: quantityOption,
-                          })}
-                      >
-                        {quantityOption}
-                      </Button>
-                    {/each}
-                  </div>
-
-                  <p class="text-xs uppercase tracking-[0.14em] text-stone-500">
-                    {selection.dozens * 12} pieces · {formatCurrency(
-                      getEstimatedLineTotal(selection)
-                    )}
-                  </p>
-                </div>
-              </div>
-            </article>
-          {/each}
-        </div>
-      </div>
+          <strong
+            >{formatCurrency(
+              estimateBulkLine(line.duster, line.dozens)
+            )}</strong
+          >
+        </div>{/each}
+      {#if !lines.length}<p class="empty-order">
+          Your order is empty. Add a quantity beside a color, or choose a
+          starting mix.
+        </p>{/if}
     </div>
-
-    <aside class="flex flex-col gap-5 lg:sticky lg:top-28 lg:self-start">
-      <div class="nf-panel-modern flex flex-col gap-5 p-5">
-        <div>
-          <p class="nf-eyebrow">Quote summary</p>
-          <Heading customClass="mt-2 text-2xl">{totalDozens} dozen</Heading>
-          <p class="mt-1 text-stone-600">
-            {totalPieces} total dusters · {formatCurrency(estimatedTotal)}
-          </p>
-          <p class="mt-2 text-sm text-stone-500">{quoteTier}</p>
-        </div>
-
-        {#if selectedSelections.length > 0}
-          <div class="grid gap-3 text-sm">
-            {#each selectedSelections as selection}
-              <div class="flex justify-between gap-4 border-b border-stone-100 pb-3">
-                <div class="min-w-0">
-                  <p class="montserrat-bold text-stone-950">
-                    {selection.size} {selection.category}
-                  </p>
-                  <p class="truncate text-stone-600">
-                    {selection.color.replace('Premium ', '')} - {selection.name}
-                  </p>
-                </div>
-                <p class="montserrat-bold whitespace-nowrap text-teal-800">
-                  {selection.dozens} dz. · {formatCurrency(
-                    getEstimatedLineTotal(selection)
-                  )}
-                </p>
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <p class="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-stone-700">
-            Select at least one duster to request a quote.
-          </p>
-        {/if}
-
-        <div class="grid gap-3">
-          <input
-            class="rounded-lg border border-stone-300 px-3 py-3"
-            placeholder="Company"
-            bind:value={companyName}
-          />
-          <input
-            class="rounded-lg border border-stone-300 px-3 py-3"
-            placeholder="Contact name"
-            bind:value={contactName}
-          />
-          <input
-            class="rounded-lg border border-stone-300 px-3 py-3"
-            placeholder="Email"
-            type="email"
-            bind:value={email}
-          />
-          <input
-            class="rounded-lg border border-stone-300 px-3 py-3"
-            placeholder="Phone"
-            bind:value={phone}
-          />
-          <textarea
-            class="min-h-[96px] rounded-lg border border-stone-300 px-3 py-3"
-            placeholder="Delivery city, timeline, recurring needs, or special mix"
-            bind:value={notes}
-          />
-        </div>
-
-        <a
-          class={`montserrat-bold rounded-full px-6 py-4 text-center transition-all ${
-            totalDozens > 0
-              ? 'bg-teal-800 text-white hover:bg-teal-700'
-              : 'pointer-events-none bg-stone-100 text-stone-500'
-          }`}
-          href={mailtoHref}
+    <p class="summary-disclaimer">
+      Shipping, taxes and availability are confirmed with your quote.
+    </p>
+    {#if !showContact}<button
+        class="nf-button"
+        disabled={!lines.length}
+        on:click={openContact}
+        >Add contact details <ArrowUpRight
+          size={17}
+          aria-hidden="true"
+        /></button
+      >{/if}
+    {#if showContact}
+      <form
+        action={mailtoHref}
+        method="get"
+        on:submit|preventDefault={() => {
+          window.location.href = mailtoHref;
+        }}
+      >
+        <h3>Your contact details</h3>
+        <label class="nf-label" for="quote-company"
+          >Company <span>(optional)</span></label
+        ><input
+          class="nf-field"
+          id="quote-company"
+          autocomplete="organization"
+          bind:value={companyName}
+        />
+        <label class="nf-label" for="quote-name">Contact name</label><input
+          class="nf-field"
+          id="quote-name"
+          autocomplete="name"
+          required
+          bind:value={contactName}
+        />
+        <label class="nf-label" for="quote-email">Email</label><input
+          class="nf-field"
+          id="quote-email"
+          type="email"
+          autocomplete="email"
+          required
+          bind:value={email}
+        />
+        <label class="nf-label" for="quote-phone"
+          >Phone <span>(optional)</span></label
+        ><input
+          class="nf-field"
+          id="quote-phone"
+          type="tel"
+          autocomplete="tel"
+          bind:value={phone}
+        />
+        <label class="nf-label" for="quote-notes"
+          >Delivery details &amp; notes <span>(optional)</span></label
+        ><textarea
+          class="nf-field"
+          id="quote-notes"
+          rows="3"
+          placeholder="City, delivery date, recurring orders..."
+          bind:value={notes}
+        />
+        <button type="submit" class="nf-button" disabled={!lines.length}
+          >Prepare quote email <Mail size={17} aria-hidden="true" /></button
         >
-          Request Bulk Quote
-        </a>
-        <Link
-          href="/products/feather-dusters"
-          customClass="montserrat-bold text-center text-sm text-teal-800 hover:underline"
-        >
-          Browse individual dusters
-        </Link>
-      </div>
-    </aside>
-  </section>
+        <p class="email-note">
+          Opens your email app with the order details. Send the email to request
+          your quote.
+        </p>
+      </form>
+    {/if}
+    <button class="copy-button" on:click={copyQuote} disabled={!lines.length}
+      >{#if copied}<Check size={15} aria-hidden="true" /> Quote copied{:else}<Copy
+          size={15}
+          aria-hidden="true"
+        /> Copy order details{/if}</button
+    >
+    <p class="copy-message" role="status">
+      {copied ? 'Order details copied to clipboard.' : copyError}
+    </p>
+    <a class="summary-contact" href="mailto:info@nprofiles.com"
+      >info@nprofiles.com</a
+    >
+  </aside>
 </div>
+
+<style>
+  .bulk-intro {
+    background: #f0f4f0;
+    border-bottom: 1px solid #dce4df;
+  }
+  .bulk-intro .nf-page {
+    padding-top: 26px;
+    padding-bottom: 44px;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #52625a;
+    min-height: 44px;
+  }
+  .bulk-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 30px;
+    margin-top: 16px;
+  }
+  h1 {
+    font-size: 44px;
+    line-height: 1.15;
+    margin-top: 12px;
+  }
+  .bulk-heading > div > p:last-child {
+    margin-top: 20px;
+    color: #52625a;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .intro-count {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    border-left: 1px solid #bdccbf;
+    padding-left: 30px;
+    flex-shrink: 0;
+  }
+  .intro-count strong {
+    font-family: Syne, sans-serif;
+    font-weight: 500;
+    font-size: 58px;
+    line-height: 1;
+  }
+  .intro-count span {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .bulk-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 44px;
+    padding-top: 40px;
+  }
+  .bulk-options {
+    min-width: 0;
+  }
+  .builder-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .reset-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 12px;
+    color: #52625a;
+  }
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .preset-grid button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 12px;
+    border: 1px solid #dce4df;
+    border-radius: 6px;
+    text-align: left;
+  }
+  .preset-grid button:hover {
+    border-color: #067647;
+  }
+  .preset-grid button.chosen {
+    background: #eef7f0;
+    border-color: #067647;
+  }
+  .preset-radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border: 1px solid #819589;
+    border-radius: 50%;
+  }
+  .chosen .preset-radio {
+    background: #067647;
+    border-color: #067647;
+    color: #fff;
+  }
+  .preset-grid strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .preset-grid small {
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+    color: #52625a;
+  }
+  .option-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 28px 0 22px;
+  }
+  .option-toolbar > span {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .nf-segment {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  .duster-list {
+    border-top: 1px solid #dce4df;
+  }
+  .duster-row {
+    padding: 24px 0;
+    border-bottom: 1px solid #dce4df;
+  }
+  .duster-info {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .duster-thumb {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90px;
+    background: #f2f5f1;
+    border-radius: 4px;
+  }
+  .duster-thumb img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    padding: 5px;
+  }
+  .duster-thumb > span {
+    font-size: 11px;
+    margin-top: 8px;
+    color: #52625a;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .duster-size {
+    color: #067647;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 3px;
+  }
+  .duster-size > span {
+    color: #52625a;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .duster-use {
+    font-size: 12px;
+    color: #52625a;
+    margin-top: 5px;
+  }
+  .tier-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 9px;
+    font-size: 12px;
+    color: #52625a;
+  }
+  .tier-list strong {
+    color: #172820;
+    font-weight: 500;
+    margin-left: 3px;
+  }
+  .color-quantities {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .color-quantity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #dce4df;
+    border-radius: 5px;
+    padding-left: 12px;
+    min-width: 0;
+  }
+  .color-quantity.has-quantity {
+    background: #f0f8f2;
+    border-color: #96bda4;
+  }
+  .color-quantity label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .quantity-stepper {
+    display: flex;
+    align-items: center;
+  }
+  .quantity-stepper button {
+    width: 38px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  .quantity-stepper button:hover {
+    background: #dcecdf;
+  }
+  .quantity-stepper button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .quantity-stepper input {
+    width: 28px;
+    height: 44px;
+    text-align: center;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .builder-note {
+    margin-top: 24px;
+    color: #52625a;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .quote-summary {
+    position: sticky;
+    top: 132px;
+    align-self: start;
+    min-width: 0;
+    border: 1px solid #dce4df;
+    border-radius: 8px;
+    padding: 24px;
+    background: #f5f8f4;
+  }
+  .quote-summary.editing {
+    position: static;
+  }
+  @media (max-height: 800px) {
+    .quote-summary {
+      position: static;
+    }
+  }
+  .summary-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+  .summary-top h2 {
+    font-size: 14px;
+  }
+  .summary-top > span {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .summary-total {
+    padding: 24px 0 20px;
+  }
+  .summary-total > span {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .summary-total > strong {
+    display: block;
+    font-size: 32px;
+    line-height: 1.3;
+    font-weight: 500;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-total p {
+    font-size: 12px;
+    color: #52625a;
+    margin-top: 8px;
+  }
+  .summary-total p > span {
+    color: #738579;
+    margin: 0 8px;
+  }
+  .summary-lines {
+    border-top: 1px solid #dce4df;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+  .summary-lines > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #dce4df;
+    font-size: 12px;
+  }
+  .summary-lines > div > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .summary-lines .nf-swatch {
+    margin-top: 3px;
+    width: 9px;
+    height: 9px;
+  }
+  .summary-lines small {
+    display: block;
+    color: #52625a;
+    margin-top: 3px;
+    font-size: 12px;
+  }
+  .summary-lines strong {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .empty-order {
+    font-size: 12px;
+    color: #52625a;
+    padding: 20px 0;
+  }
+  .summary-disclaimer {
+    font-size: 12px;
+    color: #52625a;
+    line-height: 1.8;
+    margin: 16px 0 22px;
+  }
+  .quote-summary > .nf-button {
+    width: 100%;
+    font-size: 12px;
+  }
+  form {
+    border-top: 1px solid #dce4df;
+    padding-top: 20px;
+  }
+  form h3 {
+    margin-bottom: 16px;
+  }
+  form .nf-label {
+    font-size: 12px;
+    margin-top: 14px;
+  }
+  form .nf-label > span {
+    color: #52625a;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  form .nf-field {
+    font-size: 12px;
+  }
+  form .nf-button {
+    width: 100%;
+    margin-top: 20px;
+    font-size: 12px;
+  }
+  .email-note {
+    color: #52625a;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 12px;
+  }
+  .copy-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    font-size: 12px;
+    color: #067647;
+    margin-top: 8px;
+  }
+  .copy-button:disabled {
+    color: #52625a;
+    cursor: not-allowed;
+  }
+  .copy-message {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .summary-contact {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: #52625a;
+    margin-top: 10px;
+    min-height: 32px;
+  }
+  @media (max-width: 1100px) {
+    .bulk-layout {
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 28px;
+    }
+    .color-quantities {
+      grid-template-columns: 1fr;
+    }
+    .intro-count {
+      display: none;
+    }
+  }
+  @media (max-width: 850px) {
+    .bulk-layout {
+      grid-template-columns: 1fr;
+    }
+    .quote-summary {
+      position: static;
+    }
+    .color-quantities {
+      grid-template-columns: 1fr 1fr;
+    }
+    h1 {
+      font-size: 36px;
+    }
+  }
+  @media (max-width: 520px) {
+    h1 {
+      font-size: 32px;
+    }
+    .bulk-layout {
+      padding-top: 24px;
+    }
+    .builder-heading {
+      align-items: flex-start;
+    }
+    .builder-heading h2 {
+      font-size: 14px;
+    }
+    .reset-button {
+      font-size: 12px;
+      min-height: 24px;
+    }
+    .preset-grid {
+      gap: 6px;
+    }
+    .preset-grid button {
+      padding: 14px 8px;
+      gap: 7px;
+    }
+    .preset-grid strong {
+      font-size: 12px;
+    }
+    .preset-grid small {
+      font-size: 11px;
+    }
+    .preset-radio {
+      width: 14px;
+      height: 14px;
+    }
+    .nf-segment {
+      padding-inline: 8px;
+      font-size: 12px;
+    }
+    .duster-info {
+      grid-template-columns: 70px minmax(0, 1fr);
+      gap: 14px;
+    }
+    .duster-thumb,
+    .duster-thumb img {
+      width: 70px;
+      height: 70px;
+    }
+    .duster-size > span {
+      display: block;
+      margin-top: 2px;
+    }
+    .color-quantities {
+      grid-template-columns: 1fr;
+    }
+    .duster-description h3 {
+      font-size: 14px;
+    }
+  }
+</style>

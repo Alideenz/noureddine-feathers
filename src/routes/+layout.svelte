@@ -34,8 +34,26 @@
   onMount(() => cart.getCartItems());
 </script>
 
-<main class="min-h-screen bg-stone-50">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="min-h-screen bg-white">
   <Nav />
-  <slot />
+  <main id="main-content" tabindex="-1"><slot /></main>
   <Footer />
-</main>
+</div>
+
+<style>
+  .skip-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    padding: 12px 20px;
+    background: #fff;
+    color: #172820;
+    border: 2px solid #067647;
+    transform: translateY(-150%);
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+</style>

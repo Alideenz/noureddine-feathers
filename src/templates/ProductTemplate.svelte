@@ -1,11 +1,15 @@
-<!-- @format -->
 <script lang="ts">
   import { page } from '$app/stores';
-
-  // stores
+  import { tick, onDestroy } from 'svelte';
+  import {
+    ArrowLeft,
+    ArrowUpRight,
+    Check,
+    ShoppingBag,
+    X,
+    ZoomIn,
+  } from 'lucide-svelte';
   import { cart } from '$stores/CartStore';
-
-  // helpers
   import {
     formatCurrency,
     formatPackage,
@@ -14,272 +18,479 @@
     getProductImagePath,
     hasCheckoutPrice,
   } from '$helpers/helpers';
-
-  // config
   import getStripe from '$config/stripe';
-
-  // interfaces
   import type I_Product from '$interfaces/I_Product';
   import type I_ProductPriceTableRecord from '$interfaces/I_ProductPriceTableRecord';
-
-  // components
-  import Stars from '$components/Stars.svelte';
   import Counter from '$components/Counter.svelte';
-  import Button from '$components/Button.svelte';
-  import Divider from '$components/Divider.svelte';
-
-  export let data: {
-    product: I_Product;
-    productImagePublicUrls?: string[];
-  };
-
-  // state
+  import Stars from '$components/Stars.svelte';
+  export let data: { product: I_Product; productImagePublicUrls?: string[] };
+  let activeProductId = data.product.id;
   let productPrice: I_ProductPriceTableRecord | undefined =
-    data.product?.prices[0];
-  let quantity: number = 1;
-  let isLoadingCheckout: boolean = false;
-  let checkoutErrorMessage: string = '';
-  let showAddToCartMessage: boolean = false;
-  let showFullImage = false;
-  let fullImageSrc = '';
-
+    data.product.prices[0];
+  let quantity = 1;
+  let activeImage = 0;
+  let isLoadingCheckout = false;
+  let checkoutErrorMessage = '';
+  let showAddToCartMessage = false;
+  let addedTimeout: ReturnType<typeof setTimeout>;
+  let imageDialog: HTMLDialogElement;
+  $: if (data.product.id !== activeProductId) {
+    activeProductId = data.product.id;
+    productPrice = data.product.prices[0];
+    quantity = 1;
+    activeImage = 0;
+    checkoutErrorMessage = '';
+    showAddToCartMessage = false;
+  }
   $: productTitle = formatProductTitle(data.product);
-  $: productDisplaySize = getProductDisplaySize(data.product);
+  $: size = getProductDisplaySize(data.product);
   $: canCheckout = hasCheckoutPrice(productPrice);
-  $: localImages =
-    data.product.category === 'Feather Dusters'
-      ? [getProductImagePath(data.product, 0), getProductImagePath(data.product, 1)]
-      : [getProductImagePath(data.product, 0)];
-  $: productImages =
-    data.productImagePublicUrls && data.productImagePublicUrls.length > 0
-      ? data.productImagePublicUrls
-      : localImages;
-
+  $: productImages = data.productImagePublicUrls?.length
+    ? data.productImagePublicUrls
+    : data.product.category === 'Feather Dusters'
+    ? [getProductImagePath(data.product), getProductImagePath(data.product, 1)]
+    : [getProductImagePath(data.product)];
+  $: shortName = data.product.name.replace(/^Premium /, '');
+  $: color = data.product.color.replace('Premium ', '');
   const checkout = async () => {
     if (!productPrice) return;
-
     try {
       isLoadingCheckout = true;
       checkoutErrorMessage = '';
-
       const response = await fetch('/api/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userProfileId: $page.data.session && $page.data.session.user.id,
-          products: [
-            {
-              productPriceId: productPrice.id,
-              quantity,
-            },
-          ],
+          products: [{ productPriceId: productPrice.id, quantity }],
         }),
       });
-
-      const checkoutSession = await response.json();
-
-      if (!response.ok || !checkoutSession.id) {
+      const session = await response.json();
+      if (!response.ok || !session.id) {
         checkoutErrorMessage =
-          checkoutSession.error || 'Checkout could not be started.';
+          session.error || 'Checkout could not be started.';
         return;
       }
-
       const stripe = await getStripe();
-
       const { error } = await stripe!.redirectToCheckout({
-        sessionId: checkoutSession.id,
+        sessionId: session.id,
       });
-
-      if (error && error.message) checkoutErrorMessage = error.message;
-    } catch (error) {
-      checkoutErrorMessage = 'Checkout could not be started. Try again later.';
+      if (error?.message) checkoutErrorMessage = error.message;
+    } catch {
+      checkoutErrorMessage = 'Checkout could not be started. Please try again.';
     } finally {
       isLoadingCheckout = false;
     }
   };
-
-  const openFullImage = (imageSrc: string) => {
-    fullImageSrc = imageSrc;
-    showFullImage = true;
+  const addToCart = () => {
+    if (!productPrice) return;
+    cart.addCartItem(data.product, productPrice, quantity);
+    showAddToCartMessage = true;
+    clearTimeout(addedTimeout);
+    addedTimeout = setTimeout(() => (showAddToCartMessage = false), 2500);
   };
-
-  $: {
-    if (showAddToCartMessage)
-      setTimeout(() => (showAddToCartMessage = false), 1400);
-  }
+  const openImage = async () => {
+    await tick();
+    imageDialog.showModal();
+  };
+  onDestroy(() => clearTimeout(addedTimeout));
 </script>
 
-{#if showFullImage}
-  <div class="fixed inset-0 z-50 flex h-full w-full bg-stone-950/90 p-4">
-    <div class="flex h-full w-full justify-center rounded-lg bg-white p-4">
-      <img
-        src={fullImageSrc}
-        alt={productTitle}
-        class="object-contain"
-      />
-    </div>
-    <Button
-      customClass="absolute right-8 top-8 self-start rounded-full bg-white p-3 hover:bg-stone-950 hover:text-white transition-all"
-      handleClick={() => (showFullImage = false)}
-      ariaLabel="Close product image"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        class="h-5 w-5"
+<dialog bind:this={imageDialog} aria-label={productTitle}>
+  <div class="dialog-inner">
+    <form method="dialog">
+      <button class="nf-icon-button" aria-label="Close product image"
+        ><X size={20} aria-hidden="true" /></button
       >
-        <path
-          d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-        />
-      </svg>
-    </Button>
+    </form>
+    <img src={productImages[activeImage]} alt={productTitle} />
   </div>
-{:else}
-  <div class="bg-stone-50">
-    <div class="nf-page grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-      <div class="order-2 flex flex-col gap-5 lg:order-1">
-        {#each productImages as imageSrc}
-          <button
-            class="group overflow-hidden rounded-lg border border-stone-200/80 bg-white p-4 shadow-[0_18px_55px_rgba(28,25,23,0.05)]"
-            on:mouseup={() => openFullImage(imageSrc)}
-            aria-label={`Open full image of ${productTitle}`}
+</dialog>
+
+<div class="nf-page product-page">
+  <a
+    class="back-link"
+    href={`/products/${data.product.category.toLowerCase().replace(/ /g, '-')}`}
+    ><ArrowLeft size={14} aria-hidden="true" /> {data.product.category}</a
+  >
+  <div class="product-layout">
+    <section class="product-gallery" aria-label="Product photographs">
+      <button
+        class="main-image"
+        on:click={openImage}
+        aria-label={`Enlarge image of ${productTitle}`}
+        ><img
+          src={productImages[activeImage]}
+          alt={productTitle}
+          width="1024"
+          height="1024"
+        /><span><ZoomIn size={19} aria-hidden="true" /></span></button
+      >{#if productImages.length > 1}<div
+          class="image-thumbnails"
+          role="group"
+          aria-label="Choose product photograph"
+        >
+          {#each productImages as image, index}<button
+              aria-pressed={activeImage === index}
+              aria-label={`Product photograph ${index + 1}`}
+              on:click={() => (activeImage = index)}
+              ><img src={image} alt="" width="72" height="72" /></button
+            >{/each}
+        </div>{/if}
+    </section>
+    <section class="product-details" aria-labelledby="product-title">
+      <p class="nf-eyebrow">{data.product.category}</p>
+      <h1 id="product-title" class="nf-display">{shortName}</h1>
+      <p class="product-variant">{color}{size ? ` / ${size}` : ''}</p>
+      {#if data.product.rating_count > 0}<Stars
+          id={data.product.id}
+          ratingAverage={data.product.rating_average}
+          ratingCount={data.product.rating_count}
+        />{/if}
+      <p class="description">{data.product.description}</p>
+      {#if productPrice}
+        <fieldset class="pack-options">
+          <legend>Choose a pack</legend>
+          <div>
+            {#each data.product.prices as price}<button
+                aria-pressed={productPrice.id === price.id}
+                on:click={() => (productPrice = price)}
+                ><span
+                  >{formatPackage(price.quantity)}
+                  <small
+                    >{price.quantity}
+                    {price.quantity === 1 ? 'piece' : 'pieces'}</small
+                  ></span
+                ><strong>{formatCurrency(price.price)}</strong
+                >{#if productPrice.id === price.id}<Check
+                    size={15}
+                    aria-hidden="true"
+                  />{/if}</button
+              >{/each}
+          </div>
+        </fieldset>
+        <div class="product-price" aria-live="polite">
+          <strong>{formatCurrency(productPrice.price)}</strong><span
+            >{formatPackage(productPrice.quantity, true)}</span
           >
-            <img
-              src={imageSrc}
-              alt={productTitle}
-              class="aspect-square w-full object-contain transition-all duration-500 group-hover:scale-105"
-            />
-          </button>
-        {/each}
-      </div>
-
-      <aside class="order-1 flex flex-col gap-7 lg:sticky lg:top-6 lg:order-2 lg:self-start">
-        <div class="nf-panel-modern flex flex-col gap-6 p-6">
-          <div class="flex flex-col gap-3">
-            <p class="nf-eyebrow">{data.product.category}</p>
-            <h1 class="nf-display text-4xl leading-[0.98] text-stone-950 sm:text-5xl">
-              {productTitle}
-            </h1>
-            {#if data.product.rating_count > 0}
-              <Stars
-                id={data.product.id}
-                ratingAverage={data.product.rating_average}
-                ratingCount={data.product.rating_count}
-              />
-            {/if}
-          </div>
-
-          {#if productPrice}
-            <div class="flex flex-col gap-2">
-              <p>
-                <span class="montserrat-bold text-3xl text-teal-800">
-                  {formatCurrency(productPrice.price)}
-                </span>
-                <span class="text-stone-500">
-                  {formatPackage(productPrice.quantity, true)}
-                </span>
-              </p>
-              {#if productPrice.quantity > 1}
-                <p class="text-sm text-stone-500">
-                  {formatCurrency(productPrice.price / productPrice.quantity)}
-                  per unit
-                </p>
-              {/if}
-            </div>
-          {/if}
-
-          <Divider />
-
-          <div class="grid gap-5">
-            <div class="flex flex-col gap-3">
-              <p class="montserrat-bold">Description</p>
-              <p class="leading-7 text-stone-600">{data.product.description}</p>
-            </div>
-            <div class="grid gap-4 rounded-lg bg-stone-50 p-4 sm:grid-cols-2">
-              <div>
-                <p class="text-sm uppercase text-stone-500">Color</p>
-                <p class="montserrat-bold">{data.product.color}</p>
-              </div>
-              {#if productDisplaySize}
-                <div>
-                  <p class="text-sm uppercase text-stone-500">Size</p>
-                  <p class="montserrat-bold">{productDisplaySize}</p>
-                </div>
-              {/if}
-            </div>
-          </div>
-
-          {#if productPrice}
-            <div class="flex flex-col gap-4">
-              <p class="montserrat-bold">Package</p>
-              <div class="flex flex-wrap gap-3">
-                {#each data.product.prices as price}
-                  <Button
-                    customClass="rounded-full bg-stone-100 px-5 py-3 hover:border-teal-800 hover:bg-white transition-all"
-                    handleClick={() => (productPrice = price)}
-                    selected={productPrice === price}
-                  >
-                    {formatPackage(price.quantity)}
-                  </Button>
-                {/each}
-              </div>
-            </div>
-
-            <div class="flex flex-col items-start gap-3">
-              <p class="montserrat-bold">Quantity</p>
-              <Counter bind:value={quantity} />
-            </div>
-
-            <Divider />
-
-            <div class="flex flex-col gap-4">
-              <p class="text-sm text-stone-500">
-                Shipping and taxes calculated at checkout. Free delivery on
-                orders over $950 CAD.
-              </p>
-              {#if checkoutErrorMessage}
-                <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-                  {checkoutErrorMessage}
-                </p>
-              {/if}
-              {#if !canCheckout}
-                <p class="rounded-lg bg-amber-50 p-3 text-sm text-stone-700">
-                  Checkout needs live product data. You can still test browsing
-                  and cart behavior locally.
-                </p>
-              {/if}
-              <Button
-                customClass="rounded-full bg-[#d8b25a] px-8 py-4 text-stone-950 hover:bg-[#c9a046] transition-all disabled:opacity-100 disabled:bg-stone-100 disabled:text-stone-500"
-                disabled={showAddToCartMessage || !productPrice}
-                handleClick={() => {
-                  if (productPrice) cart.addCartItem(data.product, productPrice, quantity);
-                  showAddToCartMessage = true;
-                }}
-              >
-                {#if showAddToCartMessage}
-                  Added to Cart ({$cart.cartTotalItems})
-                {:else}
-                  Add to Cart
-                {/if}
-              </Button>
-              <Button
-                customClass="rounded-full bg-teal-900 px-8 py-4 text-white hover:bg-teal-800 transition-all disabled:bg-stone-100 disabled:text-stone-500 disabled:opacity-100"
-                disabled={isLoadingCheckout || !canCheckout}
-                handleClick={async () => await checkout()}
-              >
-                {#if isLoadingCheckout}
-                  Redirecting to Checkout...
-                {:else}
-                  Buy Now
-                {/if}
-              </Button>
-            </div>
-          {/if}
         </div>
-      </aside>
-    </div>
+        {#if productPrice.quantity > 1}<p class="per-piece">
+            {formatCurrency(productPrice.price / productPrice.quantity)} per duster
+          </p>{/if}
+        <div class="quantity-row">
+          <div>
+            <p class="nf-label">Number of packs</p>
+            <Counter bind:value={quantity} />
+          </div>
+          <p>
+            {quantity * productPrice.quantity} total pieces<br /><strong
+              >{formatCurrency(quantity * productPrice.price)}</strong
+            >
+          </p>
+        </div>
+        <div class="buy-actions">
+          <button
+            class="nf-button"
+            on:click={addToCart}
+            disabled={showAddToCartMessage}
+            >{#if showAddToCartMessage}<Check size={18} aria-hidden="true" /> Added
+              to cart{:else}<ShoppingBag size={18} aria-hidden="true" /> Add to cart{/if}</button
+          ><button
+            class="nf-button nf-button-secondary"
+            disabled={isLoadingCheckout || !canCheckout}
+            on:click={checkout}
+            >{isLoadingCheckout
+              ? 'Opening checkout...'
+              : 'Buy now'}<ArrowUpRight size={18} aria-hidden="true" /></button
+          >
+        </div>
+        <p class="sr-only" role="status">
+          {showAddToCartMessage ? 'Product added to your cart.' : ''}
+        </p>
+        {#if checkoutErrorMessage}<p class="checkout-error" role="alert">
+            {checkoutErrorMessage}
+          </p>{/if}
+        {#if !canCheckout}<p class="delivery-note">
+            Online checkout is unavailable for this item at the moment. <a
+              href="/info/contact">Contact us to order.</a
+            >
+          </p>{/if}
+        <p class="delivery-note">
+          Prices in CAD. Shipping and taxes calculated at checkout.<br />Free
+          delivery on orders over CA$950.
+        </p>
+      {/if}
+      <a class="bulk-callout" href="/products/janitorial-bulk"
+        ><span
+          >Buying for a cleaning team?<small
+            >Mix sizes and colors in a bulk quote.</small
+          ></span
+        ><ArrowUpRight size={20} aria-hidden="true" /></a
+      >
+    </section>
   </div>
-{/if}
+</div>
+
+<style>
+  .product-page {
+    padding-top: 24px;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    font-size: 12px;
+    color: #52625a;
+    margin-bottom: 22px;
+  }
+  .product-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 64px;
+    align-items: flex-start;
+  }
+  .product-gallery {
+    min-width: 0;
+    position: sticky;
+    top: 138px;
+  }
+  .main-image {
+    position: relative;
+    display: block;
+    width: 100%;
+    background: #f0f4f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .main-image img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    padding: 24px;
+  }
+  .main-image > span {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 50%;
+    height: 44px;
+    width: 44px;
+  }
+  .main-image:hover img {
+    transform: scale(1.03);
+    transition: transform 400ms;
+  }
+  .image-thumbnails {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .image-thumbnails button {
+    width: 72px;
+    height: 72px;
+    border: 1px solid #dce4df;
+    border-radius: 4px;
+    background: #f0f4f0;
+  }
+  .image-thumbnails button[aria-pressed='true'] {
+    border-color: #067647;
+    outline: 1px solid #067647;
+  }
+  .image-thumbnails img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
+  }
+  h1 {
+    font-size: 38px;
+    line-height: 1.18;
+    margin: 14px 0;
+  }
+  .product-variant {
+    font-size: 14px;
+    font-weight: 500;
+    color: #067647;
+  }
+  .description {
+    color: #52625a;
+    font-size: 14px;
+    line-height: 1.9;
+    margin: 22px 0 28px;
+  }
+  .pack-options legend {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .pack-options > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pack-options button {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    text-align: left;
+    padding: 13px 16px;
+    border: 1px solid #c7d4cb;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .pack-options button[aria-pressed='true'] {
+    background: #edf7f0;
+    border-color: #067647;
+  }
+  .pack-options button > span {
+    flex: 1;
+  }
+  .pack-options small {
+    color: #52625a;
+    margin-left: 8px;
+    font-size: 12px;
+  }
+  .pack-options strong {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pack-options button:hover {
+    border-color: #067647;
+  }
+  .product-price {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: baseline;
+    margin-top: 28px;
+  }
+  .product-price strong {
+    font-size: 30px;
+    font-weight: 500;
+  }
+  .product-price > span {
+    font-size: 12px;
+    color: #52625a;
+  }
+  .per-piece {
+    font-size: 12px;
+    color: #52625a;
+    margin-top: 3px;
+  }
+  .quantity-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-end;
+    margin-top: 24px;
+  }
+  .quantity-row .nf-label {
+    font-size: 12px;
+  }
+  .quantity-row > p {
+    font-size: 12px;
+    color: #52625a;
+    text-align: right;
+  }
+  .quantity-row strong {
+    font-size: 16px;
+    font-weight: 600;
+    color: #172820;
+  }
+  .buy-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .buy-actions button {
+    padding-inline: 14px;
+    font-size: 12px;
+  }
+  .delivery-note {
+    font-size: 12px;
+    color: #52625a;
+    line-height: 1.85;
+    margin-top: 16px;
+  }
+  .delivery-note a {
+    text-decoration: underline;
+  }
+  .checkout-error {
+    font-size: 12px;
+    color: #a11919;
+    margin-top: 12px;
+  }
+  .bulk-callout {
+    border-top: 1px solid #dce4df;
+    margin-top: 28px;
+    padding-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    font-size: 12px;
+    color: #067647;
+  }
+  .bulk-callout small {
+    display: block;
+    margin-top: 5px;
+    color: #52625a;
+    font-size: 12px;
+  }
+  dialog {
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    width: min(900px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    background: #f0f4f0;
+  }
+  dialog::backdrop {
+    background: #172820bb;
+  }
+  .dialog-inner {
+    padding: 44px 20px 20px;
+  }
+  .dialog-inner form {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+  }
+  .dialog-inner img {
+    max-height: calc(100dvh - 110px);
+    width: 100%;
+    object-fit: contain;
+  }
+  @media (max-width: 1000px) {
+    .product-layout {
+      gap: 32px;
+    }
+    h1 {
+      font-size: 32px;
+    }
+  }
+  @media (max-width: 750px) {
+    .product-layout {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+    .product-gallery {
+      position: static;
+    }
+    .main-image img {
+      max-height: 420px;
+    }
+    h1 {
+      font-size: 30px;
+    }
+    .product-page {
+      padding-top: 14px;
+    }
+  }
+</style>

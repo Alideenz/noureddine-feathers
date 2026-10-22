@@ -10,7 +10,7 @@
   export let products: I_Product[] = [];
 </script>
 
-<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:gap-7">
+<div class="grid grid-cols-2 gap-x-4 gap-y-9 md:gap-x-6 lg:grid-cols-4">
   {#each products as product}
     <ProductCard {product} />
   {/each}

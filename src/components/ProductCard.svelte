@@ -1,75 +1,191 @@
-<!-- @format -->
 <script lang="ts">
-  // helpers
+  import { ArrowUpRight } from 'lucide-svelte';
   import {
+    formatCurrency,
+    formatPackage,
     formatProductTitle,
+    getProductDisplaySize,
     getProductImagePath,
     getProductPath,
-    getProductPriceSummary,
   } from '$helpers/helpers';
-
-  // interfaces
   import type I_Product from '$interfaces/I_Product';
-
-  // components
-  import Link from '$components/Link.svelte';
-
-  // props
   export let product: I_Product;
-
-  // state
-  $: src = getProductImagePath(product);
-  $: productPath = getProductPath(product);
   $: productTitle = formatProductTitle(product);
-  $: priceSummary = getProductPriceSummary(product);
+  $: size = getProductDisplaySize(product);
+  $: color = product.color.replace('Premium ', '');
+  $: name = product.name.replace(/^Premium /, '');
+  $: path = getProductPath(product);
+  $: prices = [...product.prices].sort((a, b) => a.quantity - b.quantity);
+  const swatches: Record<string, string> = {
+    Black: '#242724',
+    Gray: '#929994',
+    Yellow: '#f4d44f',
+    Green: '#3f7d4c',
+    Orange: '#ed7624',
+    Blue: '#2b67c4',
+    White: '#fff',
+    Purple: '#8545a0',
+    Red: '#c33636',
+    Pink: '#e3a3bd',
+    Gold: '#bf943b',
+    'Light Blue': '#8cc5e8',
+  };
 </script>
 
-<article
-  class="group flex h-full flex-col overflow-hidden rounded-[6px] border border-stone-200/80 bg-[#fffdf8] shadow-[0_22px_80px_rgba(28,25,23,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-[#b8975b] hover:bg-white hover:shadow-[0_28px_90px_rgba(28,25,23,0.11)]"
->
-  <Link href={productPath} customClass="block" ariaLabel={productTitle}>
-    <div
-      class="relative aspect-[5/4] overflow-hidden bg-[#f4f2ea]"
-    >
-      <div class="absolute left-3 top-3 z-10 max-w-[calc(100%-1.5rem)] rounded-full bg-white/90 px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-stone-700 shadow-sm">
-        {product.category}
-      </div>
-        <img
-          {src}
-          alt={product.name}
-          class="h-full w-full object-contain p-5 transition-all duration-500 group-hover:scale-105 sm:p-6"
-          loading="lazy"
-        />
-    </div>
-  </Link>
-
-  <div class="flex flex-1 flex-col justify-between gap-5 p-5">
-    <div class="flex min-h-[96px] flex-col gap-4">
-      <Link
-        href={productPath}
-        customClass="text-base font-semibold leading-7 text-stone-950 transition-all group-hover:text-teal-900"
-        ariaLabel={productTitle}
+<article class="product-card">
+  <a href={path} class="product-image" aria-label={productTitle}
+    ><img
+      src={getProductImagePath(product)}
+      alt={productTitle}
+      width="1024"
+      height="1024"
+      loading="lazy"
+    /><span class="product-arrow"
+      ><ArrowUpRight size={17} aria-hidden="true" /></span
+    ></a
+  >
+  <div class="product-info">
+    <div class="product-meta">
+      <span>{size || product.category}</span><span class="color-label"
+        >{#if swatches[color]}<span
+            class="nf-swatch"
+            style:background-color={swatches[color]}
+          />{/if}{color}</span
       >
-        {productTitle}
-      </Link>
     </div>
-
-    {#if priceSummary.headline}
-      <div class="border-t border-stone-200 pt-4">
-        <p class="text-lg font-semibold leading-tight text-teal-900">
-          {priceSummary.headline}
-        </p>
-        <div class="mt-3 grid gap-1.5 text-sm leading-6 text-stone-500">
-          {#if priceSummary.unitPrice}
-            <p>{priceSummary.unitPrice}</p>
-          {/if}
-          {#if priceSummary.largestPack}
-            <p class="font-medium text-stone-700">
-              {priceSummary.largestPack}
-            </p>
-          {/if}
-        </div>
-      </div>
-    {/if}
+    <h3><a href={path}>{name}</a></h3>
+    <div class="price-table">
+      {#each prices as price}<div>
+          <span>{formatPackage(price.quantity)}</span><strong
+            >{formatCurrency(price.price)}</strong
+          >
+        </div>{/each}
+    </div>
+    {#if prices[0]?.quantity > 1}<p class="unit-price">
+        {formatCurrency(prices[0].price / prices[0].quantity)} each in the smallest
+        pack
+      </p>{/if}
   </div>
 </article>
+
+<style>
+  .product-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .product-image {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: #f2f5f1;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 18px;
+    transition: transform 450ms ease;
+  }
+  .product-card:hover img {
+    transform: rotate(-3deg) scale(1.04);
+  }
+  .product-arrow {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: white;
+    transition: background 200ms;
+  }
+  .product-card:hover .product-arrow {
+    background: #d4ebdc;
+  }
+  .product-info {
+    padding: 16px 0 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .product-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px;
+    color: #52625a;
+    font-size: 12px;
+  }
+  .color-label {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.55;
+    margin-top: 10px;
+    min-height: 44px;
+  }
+  h3 a:hover {
+    color: #067647;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .price-table {
+    border-top: 1px solid #dce4df;
+    padding-top: 10px;
+    margin-top: 14px;
+  }
+  .price-table > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+  .price-table > div > span {
+    color: #52625a;
+  }
+  .price-table strong {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .unit-price {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #52625a;
+    margin-top: 8px;
+  }
+  @media (max-width: 500px) {
+    .product-image img {
+      padding: 8px;
+    }
+    .product-meta {
+      font-size: 11px;
+    }
+    h3 {
+      font-size: 12px;
+      min-height: 40px;
+    }
+    .price-table > div {
+      font-size: 12px;
+    }
+    .product-arrow {
+      right: 8px;
+      bottom: 8px;
+      width: 28px;
+      height: 28px;
+    }
+    .unit-price {
+      font-size: 11px;
+    }
+  }
+</style>

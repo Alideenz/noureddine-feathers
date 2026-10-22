@@ -1,92 +1,168 @@
-/** @format */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Montserrat';
-  src: url('/src/lib/fonts/Montserrat-Regular.woff2') format('woff2');
-  font-weight: normal;
+  font-family: Inter;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
   font-style: normal;
-  font-display: block;
+  font-weight: 100 900;
+  font-display: swap;
 }
-
 @font-face {
-  font-family: 'Montserrat Bold';
-  src: url('/src/lib/fonts/Montserrat-Bold.woff2') format('woff2');
-  font-weight: normal;
+  font-family: Syne;
+  src: url('/fonts/syne-latin.woff2') format('woff2');
   font-style: normal;
-  font-display: block;
-}
-
-body {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #1c1917;
-  background:
-    linear-gradient(90deg, rgba(28, 25, 23, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, #fbfaf6 0%, #f2efe7 48%, #f7f8f3 100%);
-  background-size: 44px 44px, auto;
-  font-size: 16px;
-  line-height: 1.65;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-.montserrat {
-  font-family: 'Montserrat';
-}
-
-.montserrat-bold {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  font-weight: 700;
+  font-weight: 400 800;
+  font-display: swap;
 }
 
 @layer base {
+  :root {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    color: #172820;
+    background: #fff;
+    font-synthesis: none;
+    --nf-ink: #172820;
+    --nf-green: #067647;
+    --nf-accent: #10b981;
+    --nf-muted: #52625a;
+    --nf-line: #dce4df;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 110px;
+  }
+  body {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    overflow-wrap: break-word;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    touch-action: manipulation;
+  }
+  :focus-visible {
+    outline: 3px solid #067647;
+    outline-offset: 4px;
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline-offset: 2px;
+  }
   ::selection {
-    background: #064e3b;
-    color: #fff;
+    background: #a7f3d0;
+    color: #172820;
+  }
+  [id] {
+    scroll-margin-top: 110px;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #52625a;
+    opacity: 1;
   }
 }
 
 @layer components {
   .nf-page {
-    @apply mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:py-16;
+    @apply mx-auto w-full max-w-[1360px] px-5 py-12 sm:px-8 lg:px-12 lg:py-20;
   }
-
   .nf-eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-teal-900;
+    @apply text-xs font-semibold text-[#52625a];
   }
-
-  .nf-panel {
-    @apply rounded-lg border border-stone-200/80 bg-white shadow-[0_18px_55px_rgba(28,25,23,0.06)];
-  }
-
-  .nf-panel-modern {
-    @apply rounded-lg border border-stone-200/80 bg-white/90 shadow-[0_24px_70px_rgba(28,25,23,0.07)] backdrop-blur;
-  }
-
-  .nf-soft-band {
-    @apply border-y border-stone-200 bg-[#f8f4e9];
-  }
-
   .nf-display {
-    font-family:
-      "Bodoni 72", Didot, "Iowan Old Style", Georgia, Cambria, "Times New Roman",
-      serif;
-    font-weight: 400;
+    font-family: Syne, Inter, sans-serif;
+    font-weight: 500;
     letter-spacing: 0;
   }
-
-  .nf-art-panel {
-    @apply border border-stone-900 bg-[#fffdf8] shadow-[10px_10px_0_rgba(28,25,23,0.08)];
+  .montserrat,
+  .montserrat-bold {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   }
-
+  .montserrat-bold {
+    font-weight: 600;
+  }
+  .nf-panel,
+  .nf-panel-modern {
+    @apply rounded-lg border border-[#dce4df] bg-white;
+  }
+  .nf-soft-band {
+    @apply border-y border-[#dce4df] bg-[#f3f7f4];
+  }
+  .nf-art-panel {
+    @apply border border-[#dce4df] bg-[#f3f7f4];
+  }
   .nf-section-shell {
-    @apply rounded-[6px] border border-stone-200/80 bg-white/70 p-4 shadow-[0_24px_80px_rgba(28,25,23,0.045)] sm:p-6;
+    @apply bg-white;
+  }
+  .nf-button {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-3 rounded-md border border-transparent bg-[#067647] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#055c39] disabled:cursor-not-allowed disabled:bg-[#e8eeea] disabled:text-[#52625a];
+  }
+  .nf-button-secondary {
+    @apply border-[#819589] bg-transparent text-[#172820] hover:border-[#067647] hover:bg-[#e7f0ea];
+  }
+  .nf-text-link {
+    @apply inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#067647] underline-offset-4 hover:underline;
+  }
+  .nf-field {
+    @apply min-h-[48px] w-full min-w-0 rounded-md border border-[#819589] bg-white px-3 py-2.5 text-sm text-[#172820];
+  }
+  .nf-label {
+    @apply mb-2 block text-sm font-medium text-[#172820];
+  }
+  .nf-segments {
+    @apply flex flex-wrap gap-1 rounded-md bg-[#edf2ee] p-1;
+  }
+  .nf-segment {
+    @apply min-h-[44px] rounded px-4 py-2 text-sm font-medium text-[#52625a] transition-colors hover:bg-white hover:text-[#172820];
+  }
+  .nf-segment[aria-pressed='true'] {
+    @apply bg-[#172820] text-white;
+  }
+  .nf-icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#819589] bg-white text-[#172820] transition-colors hover:bg-[#edf2ee] disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .nf-swatch {
+    @apply inline-block h-3 w-3 shrink-0 rounded-full border border-black/25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -29,6 +29,7 @@
     "@stripe/stripe-js": "^1.44.1",
     "@supabase/auth-helpers-sveltekit": "^0.10.1",
     "@supabase/supabase-js": "^2.26.0",
+    "lucide-svelte": "^0.468.0",
     "stripe": "^11.1.0"
   }
 }

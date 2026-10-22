@@ -1,27 +1,27 @@
 <!-- @format -->
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from "$app/stores";
 
   // components
-  import CartCard from '$components/CartCard.svelte';
-  import Heading from '$components/Heading.svelte';
+  import CartCard from "$components/CartCard.svelte";
+  import Heading from "$components/Heading.svelte";
 
   // helpers
-  import { formatCurrency } from '$helpers/helpers';
+  import { formatCurrency } from "$helpers/helpers";
 
   // config
-  import getStripe from '$config/stripe';
+  import getStripe from "$config/stripe";
 
   // store
-  import { cart } from '$stores/CartStore';
-  import Button from '$components/Button.svelte';
-  import Divider from '$components/Divider.svelte';
-  import CartCardSkeleton from '$components/CartCardSkeleton.svelte';
-  import Link from '$components/Link.svelte';
+  import { cart } from "$stores/CartStore";
+  import Button from "$components/Button.svelte";
+  import Divider from "$components/Divider.svelte";
+  import CartCardSkeleton from "$components/CartCardSkeleton.svelte";
+  import Link from "$components/Link.svelte";
 
   // state
   let isLoadingCheckout: boolean = false;
-  let checkoutErrorMessage: string = '';
+  let checkoutErrorMessage: string = "";
 
   $: hasUnavailableCheckoutItems = $cart.cartItems.some(
     (cartItem) => !cartItem.stripe_price_id
@@ -30,7 +30,7 @@
   const checkout = async () => {
     try {
       isLoadingCheckout = true;
-      checkoutErrorMessage = '';
+      checkoutErrorMessage = "";
 
       const products: any = $cart.cartItems.map((cartItem: any) => {
         return {
@@ -39,10 +39,10 @@
         };
       });
 
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
+      const response = await fetch("/api/checkout", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userProfileId: $page.data.session && $page.data.session.user.id,
@@ -54,7 +54,7 @@
 
       if (!response.ok || !checkoutSession.id) {
         checkoutErrorMessage =
-          checkoutSession.error || 'Checkout could not be started.';
+          checkoutSession.error || "Checkout could not be started.";
         return;
       }
 
@@ -65,7 +65,7 @@
 
       if (error && error.message) checkoutErrorMessage = error.message;
     } catch (error) {
-      checkoutErrorMessage = 'Checkout could not be started. Try again later.';
+      checkoutErrorMessage = "Checkout could not be started. Try again later.";
     } finally {
       isLoadingCheckout = false;
     }
@@ -73,7 +73,9 @@
 </script>
 
 <div class="bg-stone-50">
-  <div class="nf-page grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+  <div
+    class="nf-page grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]"
+  >
     <div class="flex w-full flex-col gap-8">
       <div class="flex flex-col gap-3">
         <p class="nf-eyebrow">Ready when you are</p>
@@ -108,11 +110,11 @@
 
     <aside class="flex w-full flex-col gap-6 self-start lg:sticky lg:top-6">
       <div class="nf-panel flex flex-col gap-6 p-6">
-        <Heading customClass="text-2xl">Summary</Heading>
+        <h2 class="nf-display text-2xl">Summary</h2>
         <div class="flex flex-col gap-4">
           <p class="uppercase text-stone-500">
             {$cart.cartTotalItems}
-            {$cart.cartTotalItems === 1 ? 'item' : 'items'}
+            {$cart.cartTotalItems === 1 ? "item" : "items"}
           </p>
           <div class="flex items-center gap-4">
             <p class="montserrat-bold flex-grow uppercase">Subtotal</p>
@@ -140,7 +142,9 @@
         <Button
           customClass="rounded-full bg-teal-800 px-8 py-4 text-white hover:bg-teal-700 transition-all disabled:bg-stone-100 disabled:text-stone-500 disabled:opacity-100"
           handleClick={async () => await checkout()}
-          disabled={$cart.cartTotalItems === 0 || isLoadingCheckout || hasUnavailableCheckoutItems}
+          disabled={$cart.cartTotalItems === 0 ||
+            isLoadingCheckout ||
+            hasUnavailableCheckoutItems}
         >
           {#if isLoadingCheckout}
             Redirecting to Checkout...
